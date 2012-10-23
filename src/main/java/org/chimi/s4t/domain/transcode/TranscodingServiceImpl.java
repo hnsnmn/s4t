@@ -7,17 +7,17 @@ public class TranscodingServiceImpl implements TranscodingService {
 	private MediaSourceCopier mediaSourceCopier;
 	private Transcoder transcoder;
 	private ThumbnailExtractor thumbnailExtractor;
-	private CreatedFileSender createdFileSender;
+	private CreatedFileSaver createdFileSaver;
 	private JobResultNotifier jobResultNotifier;
 
 	public TranscodingServiceImpl(MediaSourceCopier mediaSourceCopier,
 			Transcoder transcoder, ThumbnailExtractor thumbnailExtractor,
-			CreatedFileSender createdFileSender,
+			CreatedFileSaver createdFileSaver,
 			JobResultNotifier jobResultNotifier) {
 		this.mediaSourceCopier = mediaSourceCopier;
 		this.transcoder = transcoder;
 		this.thumbnailExtractor = thumbnailExtractor;
-		this.createdFileSender = createdFileSender;
+		this.createdFileSaver = createdFileSaver;
 		this.jobResultNotifier = jobResultNotifier;
 	}
 
@@ -26,7 +26,7 @@ public class TranscodingServiceImpl implements TranscodingService {
 		File multimediaFile = copyMultimediaSourceToLocal(jobId);
 		List<File> multimediaFiles = transcode(multimediaFile, jobId);
 		List<File> thumbnails = extractThubmail(multimediaFile, jobId);
-		sendCreatedFilesToDestination(multimediaFiles, thumbnails, jobId);
+		storeCreatedFilesToStorage(multimediaFiles, thumbnails, jobId);
 		notifyJobResultToRequester(jobId);
 	}
 
@@ -42,9 +42,9 @@ public class TranscodingServiceImpl implements TranscodingService {
 		return thumbnailExtractor.extract(multimediaFile, jobId);
 	}
 
-	private void sendCreatedFilesToDestination(List<File> multimediaFiles,
+	private void storeCreatedFilesToStorage(List<File> multimediaFiles,
 			List<File> thumbnails, Long jobId) {
-		createdFileSender.send(multimediaFiles, thumbnails, jobId);
+		createdFileSaver.store(multimediaFiles, thumbnails, jobId);
 	}
 
 	private void notifyJobResultToRequester(Long jobId) {

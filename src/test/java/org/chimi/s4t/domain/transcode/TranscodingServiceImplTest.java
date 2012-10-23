@@ -27,7 +27,7 @@ public class TranscodingServiceImplTest {
 	@Mock
 	private ThumbnailExtractor thumbnailExtractor;
 	@Mock
-	private CreatedFileSender createdFileSender;
+	private CreatedFileSaver createdFileSender;
 	@Mock
 	private JobResultNotifier jobResultNotifier;
 
@@ -58,7 +58,7 @@ public class TranscodingServiceImplTest {
 		verify(mediaSourceCopier, only()).copy(jobId);
 		verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
 		verify(thumbnailExtractor, only()).extract(mockMultimediaFile, jobId);
-		verify(createdFileSender, only()).send(mockMultimediaFiles,
+		verify(createdFileSender, only()).store(mockMultimediaFiles,
 				mockThumbnails, jobId);
 		verify(jobResultNotifier, only()).notifyToRequester(jobId);
 	}
