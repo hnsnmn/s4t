@@ -4,7 +4,7 @@
 
 	<groupId>org.chimi</groupId>
 	<artifactId>s4t</artifactId>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<name>s4t</name>
