@@ -1,4 +1,4 @@
-package org.chimi.s4t.domain.transcode;
+package org.chimi.s4t.application.transcode;
 
 import org.chimi.s4t.domain.job.Job.State;
 

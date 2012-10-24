@@ -1,4 +1,4 @@
-package org.chimi.s4t.domain.transcode;
+package org.chimi.s4t.application.transcode;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -13,6 +13,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.chimi.s4t.application.transcode.CreatedFileSaver;
+import org.chimi.s4t.application.transcode.JobResultNotifier;
+import org.chimi.s4t.application.transcode.JobStateChanger;
+import org.chimi.s4t.application.transcode.MediaSourceCopier;
+import org.chimi.s4t.application.transcode.ThumbnailExtractor;
+import org.chimi.s4t.application.transcode.Transcoder;
+import org.chimi.s4t.application.transcode.TranscodingExceptionHandler;
+import org.chimi.s4t.application.transcode.TranscodingService;
+import org.chimi.s4t.application.transcode.TranscodingServiceImpl;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;

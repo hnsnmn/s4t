@@ -1,4 +1,4 @@
-package org.chimi.s4t.domain.transcode;
+package org.chimi.s4t.application.transcode;
 
 import java.io.File;
 import java.util.List;
