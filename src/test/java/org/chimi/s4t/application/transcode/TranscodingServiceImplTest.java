@@ -156,6 +156,10 @@ public class TranscodingServiceImplTest {
 		File mockMultimediaFile = mock(File.class);
 		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
 
+		List<File> mockMultimediaFiles = new ArrayList<File>();
+		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
+				mockMultimediaFiles);
+
 		RuntimeException mockException = new RuntimeException();
 		when(transcoder.transcode(mockMultimediaFile, jobId)).thenThrow(
 				mockException);
@@ -180,5 +184,125 @@ public class TranscodingServiceImplTest {
 		verify(createdFileSender, never()).store(anyListOf(File.class),
 				anyListOf(File.class), anyLong());
 		verify(jobResultNotifier, never()).notifyToRequester(jobId);
+	}
+
+	@Test
+	public void transcodeFailBecauseExceptionOccuredAtThumbnailExtractor() {
+		when(jobRepository.findById(jobId)).thenReturn(mockJob);
+
+		File mockMultimediaFile = mock(File.class);
+		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
+
+		List<File> mockMultimediaFiles = new ArrayList<File>();
+		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
+				mockMultimediaFiles);
+
+		RuntimeException mockException = new RuntimeException();
+		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenThrow(
+				mockException);
+
+		try {
+			transcodingService.transcode(jobId);
+			fail("발생해야 함");
+		} catch (Exception ex) {
+			assertSame(mockException, ex);
+		}
+
+		Job job = jobRepository.findById(jobId);
+
+		assertTrue(job.isFinished());
+		assertFalse(job.isSuccess());
+		assertEquals(Job.State.EXTRACTINGTHUMBNAIL, job.getLastState());
+		assertNotNull(job.getOccurredException());
+
+		verify(mediaSourceCopier, only()).copy(jobId);
+		verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
+		verify(thumbnailExtractor, only()).extract(mockMultimediaFile, jobId);
+		verify(createdFileSender, never()).store(anyListOf(File.class),
+				anyListOf(File.class), anyLong());
+		verify(jobResultNotifier, never()).notifyToRequester(jobId);
+	}
+
+	@Test
+	public void transcodeFailBecauseExceptionOccuredAtCreatedFileSender() {
+		when(jobRepository.findById(jobId)).thenReturn(mockJob);
+
+		File mockMultimediaFile = mock(File.class);
+		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
+
+		List<File> mockMultimediaFiles = new ArrayList<File>();
+		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
+				mockMultimediaFiles);
+
+		List<File> mockThumbnails = new ArrayList<File>();
+		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
+				mockThumbnails);
+
+		RuntimeException mockException = new RuntimeException();
+		doThrow(mockException).when(createdFileSender).store(
+				mockMultimediaFiles, mockThumbnails, jobId);
+
+		try {
+			transcodingService.transcode(jobId);
+			fail("발생해야 함");
+		} catch (Exception ex) {
+			assertSame(mockException, ex);
+		}
+
+		Job job = jobRepository.findById(jobId);
+
+		assertTrue(job.isFinished());
+		assertFalse(job.isSuccess());
+		assertEquals(Job.State.STORING, job.getLastState());
+		assertNotNull(job.getOccurredException());
+
+		verify(mediaSourceCopier, only()).copy(jobId);
+		verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
+		verify(thumbnailExtractor, only()).extract(mockMultimediaFile, jobId);
+		verify(createdFileSender, only()).store(mockMultimediaFiles,
+				mockThumbnails, jobId);
+		verify(jobResultNotifier, never()).notifyToRequester(jobId);
+	}
+
+	@Test
+	public void transcodeFailBecauseExceptionOccuredAtJobResultNotifier() {
+		when(jobRepository.findById(jobId)).thenReturn(mockJob);
+
+		File mockMultimediaFile = mock(File.class);
+		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
+
+		List<File> mockMultimediaFiles = new ArrayList<File>();
+		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
+				mockMultimediaFiles);
+
+		List<File> mockThumbnails = new ArrayList<File>();
+		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
+				mockThumbnails);
+
+		RuntimeException mockException = new RuntimeException();
+		doThrow(mockException).when(jobResultNotifier).notifyToRequester(jobId);
+
+		Job job = jobRepository.findById(jobId);
+		assertTrue(job.isWaiting());
+
+		try {
+			transcodingService.transcode(jobId);
+			fail("발생해야 함");
+		} catch (Exception ex) {
+			assertSame(mockException, ex);
+		}
+
+		job = jobRepository.findById(jobId);
+		assertTrue(job.isFinished());
+		assertFalse(job.isSuccess());
+		assertEquals(Job.State.NOTIFYING, job.getLastState());
+		assertNotNull(job.getOccurredException());
+
+		verify(mediaSourceCopier, only()).copy(jobId);
+		verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
+		verify(thumbnailExtractor, only()).extract(mockMultimediaFile, jobId);
+		verify(createdFileSender, only()).store(mockMultimediaFiles,
+				mockThumbnails, jobId);
+		verify(jobResultNotifier, only()).notifyToRequester(jobId);
 	}
 }
