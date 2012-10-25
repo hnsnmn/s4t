@@ -7,21 +7,20 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chimi.s4t.application.transcode.CreatedFileSaver;
-import org.chimi.s4t.application.transcode.JobResultNotifier;
-import org.chimi.s4t.application.transcode.JobStateChanger;
-import org.chimi.s4t.application.transcode.MediaSourceCopier;
-import org.chimi.s4t.application.transcode.ThumbnailExtractor;
-import org.chimi.s4t.application.transcode.Transcoder;
-import org.chimi.s4t.application.transcode.TranscodingExceptionHandler;
-import org.chimi.s4t.application.transcode.TranscodingService;
-import org.chimi.s4t.application.transcode.TranscodingServiceImpl;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;
@@ -29,15 +28,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TranscodingServiceImplTest {
 
 	private Long jobId = new Long(1);
-	private Job mockJob = new Job();
+	private Job mockJob = new Job(jobId);
 
 	@Mock
 	private MediaSourceCopier mediaSourceCopier;
@@ -51,10 +48,6 @@ public class TranscodingServiceImplTest {
 	private JobResultNotifier jobResultNotifier;
 	@Mock
 	private JobRepository jobRepository;
-	@Mock
-	private JobStateChanger jobStateChanger;
-	@Mock
-	private TranscodingExceptionHandler transcodingExceptionHandler;
 
 	private TranscodingService transcodingService;
 
@@ -67,7 +60,7 @@ public class TranscodingServiceImplTest {
 	public void setup() {
 		transcodingService = new TranscodingServiceImpl(mediaSourceCopier,
 				transcoder, thumbnailExtractor, createdFileSender,
-				jobResultNotifier, jobStateChanger, transcodingExceptionHandler);
+				jobResultNotifier, jobRepository);
 
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
@@ -75,26 +68,6 @@ public class TranscodingServiceImplTest {
 				mockMultimediaFiles);
 		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
 				mockThumbnails);
-
-		doAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Job.State newState = (State) invocation.getArguments()[1];
-				mockJob.changeState(newState);
-				return null;
-			}
-		}).when(jobStateChanger).chageJobState(anyLong(), any(Job.State.class));
-
-		doAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				RuntimeException ex = (RuntimeException) invocation
-						.getArguments()[1];
-				mockJob.exceptionOccurred(ex);
-				return null;
-			}
-		}).when(transcodingExceptionHandler).notifyToJob(anyLong(),
-				any(RuntimeException.class));
 	}
 
 	@Test
