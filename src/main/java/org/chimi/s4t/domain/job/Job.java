@@ -18,13 +18,9 @@ public class Job {
 	private Long id;
 	private State state;
 	private Exception occurredException;
-	
+
 	public Job(Long id) {
 		this.id = id;
-	}
-
-	public void changeState(State newState) {
-		this.state = newState;
 	}
 
 	public boolean isWaiting() {
@@ -51,10 +47,6 @@ public class Job {
 		return occurredException;
 	}
 
-	public void exceptionOccurred(RuntimeException ex) {
-		occurredException = ex;
-	}
-
 	public void transcode(MediaSourceCopier mediaSourceCopier,
 			Transcoder transcoder, ThumbnailExtractor thumbnailExtractor,
 			CreatedFileSaver createdFileSaver,
@@ -77,6 +69,14 @@ public class Job {
 			exceptionOccurred(ex);
 			throw ex;
 		}
+	}
+
+	private void changeState(State newState) {
+		this.state = newState;
+	}
+
+	private void exceptionOccurred(RuntimeException ex) {
+		occurredException = ex;
 	}
 
 	private File copyMultimediaSourceToLocal(MediaSourceCopier mediaSourceCopier) {
