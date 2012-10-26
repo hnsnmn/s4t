@@ -21,9 +21,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.chimi.s4t.domain.job.CreatedFileSaver;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;
+import org.chimi.s4t.domain.job.JobResultNotifier;
+import org.chimi.s4t.domain.job.MediaSourceFile;
+import org.chimi.s4t.domain.job.ThumbnailExtractor;
+import org.chimi.s4t.domain.job.Transcoder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,10 +39,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class TranscodingServiceImplTest {
 
 	private Long jobId = new Long(1);
-	private Job mockJob = new Job(jobId);
-
 	@Mock
-	private MediaSourceCopier mediaSourceCopier;
+	private MediaSourceFile mediaSourceFile;
+
+	private Job mockJob;
+
 	@Mock
 	private Transcoder transcoder;
 	@Mock
@@ -58,12 +64,14 @@ public class TranscodingServiceImplTest {
 
 	@Before
 	public void setup() {
-		transcodingService = new TranscodingServiceImpl(mediaSourceCopier,
-				transcoder, thumbnailExtractor, createdFileSender,
-				jobResultNotifier, jobRepository);
+		mockJob = new Job(jobId, mediaSourceFile);
+		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
+
+		transcodingService = new TranscodingServiceImpl(transcoder,
+				thumbnailExtractor, createdFileSender, jobResultNotifier,
+				jobRepository);
 
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
-		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
 		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
 				mockMultimediaFiles);
 		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
@@ -87,8 +95,6 @@ public class TranscodingServiceImplTest {
 	}
 
 	private void verifyCollaboration(VerifyOption verifyOption) {
-		verify(mediaSourceCopier, only()).copy(jobId);
-
 		if (verifyOption.transcoderNever)
 			verify(transcoder, never()).transcode(any(File.class), anyLong());
 		else
@@ -120,8 +126,8 @@ public class TranscodingServiceImplTest {
 	}
 
 	@Test
-	public void transcodeFailBecauseExceptionOccuredAtMediaSourceCopier() {
-		when(mediaSourceCopier.copy(jobId)).thenThrow(mockException);
+	public void transcodeFailBecauseExceptionOccuredAtMediaSourceFile() {
+		when(mediaSourceFile.getSourceFile()).thenThrow(mockException);
 
 		executeFailingTranscodeAndAssertFail(Job.State.MEDIASOURCECOPYING);
 

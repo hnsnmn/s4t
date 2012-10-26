@@ -1,22 +1,23 @@
 package org.chimi.s4t.application.transcode;
 
+import org.chimi.s4t.domain.job.CreatedFileSaver;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.JobRepository;
+import org.chimi.s4t.domain.job.JobResultNotifier;
+import org.chimi.s4t.domain.job.ThumbnailExtractor;
+import org.chimi.s4t.domain.job.Transcoder;
 
 public class TranscodingServiceImpl implements TranscodingService {
-	private MediaSourceCopier mediaSourceCopier;
 	private Transcoder transcoder;
 	private ThumbnailExtractor thumbnailExtractor;
 	private CreatedFileSaver createdFileSaver;
 	private JobResultNotifier jobResultNotifier;
 	private JobRepository jobRepository;
 
-	public TranscodingServiceImpl(MediaSourceCopier mediaSourceCopier,
-			Transcoder transcoder, ThumbnailExtractor thumbnailExtractor,
+	public TranscodingServiceImpl(Transcoder transcoder,
+			ThumbnailExtractor thumbnailExtractor,
 			CreatedFileSaver createdFileSaver,
-			JobResultNotifier jobResultNotifier,
-			JobRepository jobRepository) {
-		this.mediaSourceCopier = mediaSourceCopier;
+			JobResultNotifier jobResultNotifier, JobRepository jobRepository) {
 		this.transcoder = transcoder;
 		this.thumbnailExtractor = thumbnailExtractor;
 		this.createdFileSaver = createdFileSaver;
@@ -27,8 +28,8 @@ public class TranscodingServiceImpl implements TranscodingService {
 	@Override
 	public void transcode(Long jobId) {
 		Job job = jobRepository.findById(jobId);
-		job.transcode(mediaSourceCopier, transcoder, thumbnailExtractor,
-				createdFileSaver, jobResultNotifier);
+		job.transcode(transcoder, thumbnailExtractor, createdFileSaver,
+				jobResultNotifier);
 	}
 
 }

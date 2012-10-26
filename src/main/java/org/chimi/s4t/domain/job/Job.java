@@ -3,12 +3,6 @@ package org.chimi.s4t.domain.job;
 import java.io.File;
 import java.util.List;
 
-import org.chimi.s4t.application.transcode.CreatedFileSaver;
-import org.chimi.s4t.application.transcode.JobResultNotifier;
-import org.chimi.s4t.application.transcode.MediaSourceCopier;
-import org.chimi.s4t.application.transcode.ThumbnailExtractor;
-import org.chimi.s4t.application.transcode.Transcoder;
-
 public class Job {
 
 	public static enum State {
@@ -16,11 +10,13 @@ public class Job {
 	}
 
 	private Long id;
+	private MediaSourceFile mediaSourceFile;
 	private State state;
 	private Exception occurredException;
 
-	public Job(Long id) {
+	public Job(Long id, MediaSourceFile mediaSourceFile) {
 		this.id = id;
+		this.mediaSourceFile = mediaSourceFile;
 	}
 
 	public boolean isWaiting() {
@@ -47,13 +43,13 @@ public class Job {
 		return occurredException;
 	}
 
-	public void transcode(MediaSourceCopier mediaSourceCopier,
-			Transcoder transcoder, ThumbnailExtractor thumbnailExtractor,
+	public void transcode(Transcoder transcoder,
+			ThumbnailExtractor thumbnailExtractor,
 			CreatedFileSaver createdFileSaver,
 			JobResultNotifier jobResultNotifier) {
 		try {
 			changeState(Job.State.MEDIASOURCECOPYING);
-			File multimediaFile = copyMultimediaSourceToLocal(mediaSourceCopier);
+			File multimediaFile = copyMultimediaSourceToLocal();
 			changeState(Job.State.TRANSCODING);
 			List<File> multimediaFiles = transcode(multimediaFile, transcoder);
 			changeState(Job.State.EXTRACTINGTHUMBNAIL);
@@ -79,8 +75,8 @@ public class Job {
 		occurredException = ex;
 	}
 
-	private File copyMultimediaSourceToLocal(MediaSourceCopier mediaSourceCopier) {
-		return mediaSourceCopier.copy(id);
+	private File copyMultimediaSourceToLocal() {
+		return mediaSourceFile.getSourceFile();
 	}
 
 	private List<File> transcode(File multimediaFile, Transcoder transcoder) {
