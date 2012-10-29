@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chimi.s4t.domain.job.CreatedFileSaver;
+import org.chimi.s4t.domain.job.DestinationStorage;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;
@@ -41,6 +41,8 @@ public class TranscodingServiceImplTest {
 	private Long jobId = new Long(1);
 	@Mock
 	private MediaSourceFile mediaSourceFile;
+	@Mock
+	private DestinationStorage destinationStorage;
 
 	private Job mockJob;
 
@@ -48,8 +50,6 @@ public class TranscodingServiceImplTest {
 	private Transcoder transcoder;
 	@Mock
 	private ThumbnailExtractor thumbnailExtractor;
-	@Mock
-	private CreatedFileSaver createdFileSender;
 	@Mock
 	private JobResultNotifier jobResultNotifier;
 	@Mock
@@ -64,12 +64,11 @@ public class TranscodingServiceImplTest {
 
 	@Before
 	public void setup() {
-		mockJob = new Job(jobId, mediaSourceFile);
+		mockJob = new Job(jobId, mediaSourceFile, destinationStorage);
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 
 		transcodingService = new TranscodingServiceImpl(transcoder,
-				thumbnailExtractor, createdFileSender, jobResultNotifier,
-				jobRepository);
+				thumbnailExtractor, jobResultNotifier, jobRepository);
 
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
@@ -90,34 +89,8 @@ public class TranscodingServiceImplTest {
 		assertEquals(Job.State.COMPLETED, job.getLastState());
 		assertNull(job.getOccurredException());
 
-		VerifyOption verifyOption = new VerifyOption();
-		verifyCollaboration(verifyOption);
-	}
-
-	private void verifyCollaboration(VerifyOption verifyOption) {
-		if (verifyOption.transcoderNever)
-			verify(transcoder, never()).transcode(any(File.class), anyLong());
-		else
-			verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
-
-		if (verifyOption.thumbnailExtractorNever)
-			verify(thumbnailExtractor, never()).extract(any(File.class),
-					anyLong());
-		else
-			verify(thumbnailExtractor, only()).extract(mockMultimediaFile,
-					jobId);
-
-		if (verifyOption.createdFileSenderNever)
-			verify(createdFileSender, never()).store(anyListOf(File.class),
-					anyListOf(File.class), anyLong());
-		else
-			verify(createdFileSender, only()).store(mockMultimediaFiles,
-					mockThumbnails, jobId);
-
-		if (verifyOption.jobResultNotifierNever)
-			verify(jobResultNotifier, never()).notifyToRequester(jobId);
-		else
-			verify(jobResultNotifier, only()).notifyToRequester(jobId);
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
+		colVerifier.verifyCollaboration();
 	}
 
 	private void assertJobIsWaitingState() {
@@ -131,13 +104,13 @@ public class TranscodingServiceImplTest {
 
 		executeFailingTranscodeAndAssertFail(Job.State.MEDIASOURCECOPYING);
 
-		VerifyOption verifyOption = new VerifyOption();
-		verifyOption.transcoderNever = true;
-		verifyOption.thumbnailExtractorNever = true;
-		verifyOption.createdFileSenderNever = true;
-		verifyOption.jobResultNotifierNever = true;
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
+		colVerifier.transcoderNever = true;
+		colVerifier.thumbnailExtractorNever = true;
+		colVerifier.destinationStorageNever = true;
+		colVerifier.jobResultNotifierNever = true;
 
-		verifyCollaboration(verifyOption);
+		colVerifier.verifyCollaboration();
 	}
 
 	private void executeFailingTranscodeAndAssertFail(State expectedLastState) {
@@ -163,12 +136,12 @@ public class TranscodingServiceImplTest {
 
 		executeFailingTranscodeAndAssertFail(Job.State.TRANSCODING);
 
-		VerifyOption verifyOption = new VerifyOption();
-		verifyOption.thumbnailExtractorNever = true;
-		verifyOption.createdFileSenderNever = true;
-		verifyOption.jobResultNotifierNever = true;
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
+		colVerifier.thumbnailExtractorNever = true;
+		colVerifier.destinationStorageNever = true;
+		colVerifier.jobResultNotifierNever = true;
 
-		verifyCollaboration(verifyOption);
+		colVerifier.verifyCollaboration();
 	}
 
 	@Test
@@ -178,24 +151,24 @@ public class TranscodingServiceImplTest {
 
 		executeFailingTranscodeAndAssertFail(Job.State.EXTRACTINGTHUMBNAIL);
 
-		VerifyOption verifyOption = new VerifyOption();
-		verifyOption.createdFileSenderNever = true;
-		verifyOption.jobResultNotifierNever = true;
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
+		colVerifier.destinationStorageNever = true;
+		colVerifier.jobResultNotifierNever = true;
 
-		verifyCollaboration(verifyOption);
+		colVerifier.verifyCollaboration();
 	}
 
 	@Test
-	public void transcodeFailBecauseExceptionOccuredAtCreatedFileSender() {
-		doThrow(mockException).when(createdFileSender).store(
-				mockMultimediaFiles, mockThumbnails, jobId);
+	public void transcodeFailBecauseExceptionOccuredAtDestinationStorage() {
+		doThrow(mockException).when(destinationStorage).save(
+				mockMultimediaFiles, mockThumbnails);
 
 		executeFailingTranscodeAndAssertFail(Job.State.STORING);
 
-		VerifyOption verifyOption = new VerifyOption();
-		verifyOption.jobResultNotifierNever = true;
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
+		colVerifier.jobResultNotifierNever = true;
 
-		verifyCollaboration(verifyOption);
+		colVerifier.verifyCollaboration();
 	}
 
 	@Test
@@ -205,15 +178,43 @@ public class TranscodingServiceImplTest {
 		assertJobIsWaitingState();
 		executeFailingTranscodeAndAssertFail(Job.State.NOTIFYING);
 
-		VerifyOption verifyOption = new VerifyOption();
+		CollaborationVerifier colVerifier = new CollaborationVerifier();
 
-		verifyCollaboration(verifyOption);
+		colVerifier.verifyCollaboration();
 	}
 
-	public class VerifyOption {
+	private class CollaborationVerifier {
 		public boolean transcoderNever;
 		public boolean thumbnailExtractorNever;
-		public boolean createdFileSenderNever;
+		public boolean destinationStorageNever;
 		public boolean jobResultNotifierNever;
+
+		public void verifyCollaboration() {
+			if (this.transcoderNever)
+				verify(transcoder, never()).transcode(any(File.class),
+						anyLong());
+			else
+				verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
+
+			if (this.thumbnailExtractorNever)
+				verify(thumbnailExtractor, never()).extract(any(File.class),
+						anyLong());
+			else
+				verify(thumbnailExtractor, only()).extract(mockMultimediaFile,
+						jobId);
+
+			if (this.destinationStorageNever)
+				verify(destinationStorage, never()).save(anyListOf(File.class),
+						anyListOf(File.class));
+			else
+				verify(destinationStorage, only()).save(mockMultimediaFiles,
+						mockThumbnails);
+
+			if (this.jobResultNotifierNever)
+				verify(jobResultNotifier, never()).notifyToRequester(jobId);
+			else
+				verify(jobResultNotifier, only()).notifyToRequester(jobId);
+		}
+
 	}
 }

@@ -11,12 +11,15 @@ public class Job {
 
 	private Long id;
 	private MediaSourceFile mediaSourceFile;
+	private DestinationStorage destinationStorage;
 	private State state;
 	private Exception occurredException;
 
-	public Job(Long id, MediaSourceFile mediaSourceFile) {
+	public Job(Long id, MediaSourceFile mediaSourceFile,
+			DestinationStorage destinationStorage) {
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
+		this.destinationStorage = destinationStorage;
 	}
 
 	public boolean isWaiting() {
@@ -45,22 +48,15 @@ public class Job {
 
 	public void transcode(Transcoder transcoder,
 			ThumbnailExtractor thumbnailExtractor,
-			CreatedFileSaver createdFileSaver,
 			JobResultNotifier jobResultNotifier) {
 		try {
-			changeState(Job.State.MEDIASOURCECOPYING);
 			File multimediaFile = copyMultimediaSourceToLocal();
-			changeState(Job.State.TRANSCODING);
 			List<File> multimediaFiles = transcode(multimediaFile, transcoder);
-			changeState(Job.State.EXTRACTINGTHUMBNAIL);
 			List<File> thumbnails = extractThumbnail(multimediaFile,
 					thumbnailExtractor);
-			changeState(Job.State.STORING);
-			storeCreatedFilesToStorage(multimediaFiles, thumbnails,
-					createdFileSaver);
-			changeState(Job.State.NOTIFYING);
+			storeCreatedFilesToStorage(multimediaFiles, thumbnails);
 			notifyJobResultToRequester(jobResultNotifier);
-			changeState(Job.State.COMPLETED);
+			completed();
 		} catch (RuntimeException ex) {
 			exceptionOccurred(ex);
 			throw ex;
@@ -76,25 +72,34 @@ public class Job {
 	}
 
 	private File copyMultimediaSourceToLocal() {
+		changeState(Job.State.MEDIASOURCECOPYING);
 		return mediaSourceFile.getSourceFile();
 	}
 
 	private List<File> transcode(File multimediaFile, Transcoder transcoder) {
+		changeState(Job.State.TRANSCODING);
 		return transcoder.transcode(multimediaFile, id);
 	}
 
 	private List<File> extractThumbnail(File multimediaFile,
 			ThumbnailExtractor thumbnailExtractor) {
+		changeState(Job.State.EXTRACTINGTHUMBNAIL);
 		return thumbnailExtractor.extract(multimediaFile, id);
 	}
 
 	private void storeCreatedFilesToStorage(List<File> multimediaFiles,
-			List<File> thumbnails, CreatedFileSaver createdFileSaver) {
-		createdFileSaver.store(multimediaFiles, thumbnails, id);
+			List<File> thumbnails) {
+		changeState(Job.State.STORING);
+		destinationStorage.save(multimediaFiles, thumbnails);
 	}
 
 	private void notifyJobResultToRequester(JobResultNotifier jobResultNotifier) {
+		changeState(Job.State.NOTIFYING);
 		jobResultNotifier.notifyToRequester(id);
+	}
+
+	private void completed() {
+		changeState(Job.State.COMPLETED);
 	}
 
 }
