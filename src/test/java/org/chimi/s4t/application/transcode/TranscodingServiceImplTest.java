@@ -27,6 +27,7 @@ import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.JobResultNotifier;
 import org.chimi.s4t.domain.job.MediaSourceFile;
+import org.chimi.s4t.domain.job.OutputFormat;
 import org.chimi.s4t.domain.job.ThumbnailExtractor;
 import org.chimi.s4t.domain.job.Transcoder;
 import org.junit.Before;
@@ -43,7 +44,7 @@ public class TranscodingServiceImplTest {
 	private MediaSourceFile mediaSourceFile;
 	@Mock
 	private DestinationStorage destinationStorage;
-
+	private List<OutputFormat> outputFormats = new ArrayList<OutputFormat>();
 	private Job mockJob;
 
 	@Mock
@@ -64,15 +65,16 @@ public class TranscodingServiceImplTest {
 
 	@Before
 	public void setup() {
-		mockJob = new Job(jobId, mediaSourceFile, destinationStorage);
+		mockJob = new Job(jobId, mediaSourceFile, destinationStorage,
+				outputFormats);
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 
 		transcodingService = new TranscodingServiceImpl(transcoder,
 				thumbnailExtractor, jobResultNotifier, jobRepository);
 
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
-		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(
-				mockMultimediaFiles);
+		when(transcoder.transcode(mockMultimediaFile, outputFormats))
+				.thenReturn(mockMultimediaFiles);
 		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
 				mockThumbnails);
 	}
@@ -131,8 +133,8 @@ public class TranscodingServiceImplTest {
 
 	@Test
 	public void transcodeFailBecauseExceptionOccuredAtTranscoder() {
-		when(transcoder.transcode(mockMultimediaFile, jobId)).thenThrow(
-				mockException);
+		when(transcoder.transcode(mockMultimediaFile, outputFormats))
+				.thenThrow(mockException);
 
 		executeFailingTranscodeAndAssertFail(Job.State.TRANSCODING);
 
@@ -192,9 +194,10 @@ public class TranscodingServiceImplTest {
 		public void verifyCollaboration() {
 			if (this.transcoderNever)
 				verify(transcoder, never()).transcode(any(File.class),
-						anyLong());
+						anyListOf(OutputFormat.class));
 			else
-				verify(transcoder, only()).transcode(mockMultimediaFile, jobId);
+				verify(transcoder, only()).transcode(mockMultimediaFile,
+						outputFormats);
 
 			if (this.thumbnailExtractorNever)
 				verify(thumbnailExtractor, never()).extract(any(File.class),

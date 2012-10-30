@@ -12,14 +12,17 @@ public class Job {
 	private Long id;
 	private MediaSourceFile mediaSourceFile;
 	private DestinationStorage destinationStorage;
+	private List<OutputFormat> outputFormats;
 	private State state;
 	private Exception occurredException;
 
 	public Job(Long id, MediaSourceFile mediaSourceFile,
-			DestinationStorage destinationStorage) {
+			DestinationStorage destinationStorage,
+			List<OutputFormat> outputFormats) {
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
 		this.destinationStorage = destinationStorage;
+		this.outputFormats = outputFormats;
 	}
 
 	public boolean isWaiting() {
@@ -78,7 +81,7 @@ public class Job {
 
 	private List<File> transcode(File multimediaFile, Transcoder transcoder) {
 		changeState(Job.State.TRANSCODING);
-		return transcoder.transcode(multimediaFile, id);
+		return transcoder.transcode(multimediaFile, outputFormats);
 	}
 
 	private List<File> extractThumbnail(File multimediaFile,
