@@ -5,16 +5,16 @@ public class OutputFormat {
 	private int width;
 	private int height;
 	private int bitrate;
-	private String videoFormat;
-	private String audioFormat;
+	private String videoCodec;
+	private String audioCodec;
 
-	public OutputFormat(int width, int height, int bitrate, String videoFormat,
-			String audioFormat) {
+	public OutputFormat(int width, int height, int bitrate, String videoCodec,
+			String audioCodec) {
 		this.width = width;
 		this.height = height;
 		this.bitrate = bitrate;
-		this.videoFormat = videoFormat;
-		this.audioFormat = audioFormat;
+		this.videoCodec = videoCodec;
+		this.audioCodec = audioCodec;
 	}
 
 	public int getWidth() {
@@ -29,12 +29,12 @@ public class OutputFormat {
 		return bitrate;
 	}
 
-	public String getVideoFormat() {
-		return videoFormat;
+	public String getVideoCodec() {
+		return videoCodec;
 	}
 
-	public String getAudioFormat() {
-		return audioFormat;
+	public String getAudioCodec() {
+		return audioCodec;
 	}
 
 }
