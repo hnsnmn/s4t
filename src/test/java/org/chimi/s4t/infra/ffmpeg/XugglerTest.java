@@ -1,10 +1,7 @@
 package org.chimi.s4t.infra.ffmpeg;
 
-import org.chimi.s4t.domain.job.OutputFormat;
 import org.junit.Test;
 
-import com.xuggle.mediatool.IMediaReader;
-import com.xuggle.mediatool.ToolFactory;
 import com.xuggle.xuggler.Global;
 import com.xuggle.xuggler.ICodec;
 import com.xuggle.xuggler.IContainer;
