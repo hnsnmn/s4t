@@ -32,6 +32,7 @@ import com.xuggle.mediatool.event.IWriteTrailerEvent;
 import com.xuggle.xuggler.Global;
 import com.xuggle.xuggler.IAudioSamples;
 import com.xuggle.xuggler.ICodec;
+import com.xuggle.xuggler.ICodec.ID;
 import com.xuggle.xuggler.IContainer;
 import com.xuggle.xuggler.IContainerFormat;
 import com.xuggle.xuggler.IError;
@@ -44,6 +45,9 @@ import com.xuggle.xuggler.IVideoPicture;
 import com.xuggle.xuggler.video.ConverterFactory;
 import com.xuggle.xuggler.video.IConverter;
 
+/**
+ * 본 코드는 Xuggler의 MediaWriter 클래스로부터 상당 부분 발췌해서 작성했다.
+ */
 public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	/** The default pixel type. */
 	private static final IPixelFormat.Type DEFAULT_PIXEL_TYPE = IPixelFormat.Type.YUV420P;
@@ -79,6 +83,10 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private IContainerFormat mContainerFormat;
 
 	private int videoBitRateInKilobytes = 0;
+	private ICodec.ID videoCodec;
+	private ICodec.ID audioCodec;
+	private int videoWidth;
+	private int videoHeight;
 
 	public VideoConverter(String url, IMediaReader reader,
 			OutputFormat outputFormat) {
@@ -94,6 +102,12 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		super(outputUrl, IContainer.make());
 
 		this.videoBitRateInKilobytes = outputFormat.getBitrate();
+		this.videoCodec = CodecValueConverter.fromDomain(outputFormat
+				.getVideoCodec());
+		this.audioCodec = CodecValueConverter.fromDomain(outputFormat
+				.getAudioCodec());
+		this.videoWidth = outputFormat.getWidth();
+		this.videoHeight = outputFormat.getHeight();
 
 		// verify that the input container is a readable type
 		if (inputContainer.getType() != IContainer.Type.READ)
@@ -111,7 +125,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		mContainerFormat = IContainerFormat.make();
 		mContainerFormat.setOutputFormat(mInputContainer.getContainerFormat()
 				.getInputFormatShortName(), getUrl(), null);
-
 	}
 
 	@Override
@@ -123,7 +136,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		encodeAudio(event.getStreamIndex(), event.getAudioSamples());
 	}
 
-	public void encodeAudio(int streamIndex, IAudioSamples samples) {
+	private void encodeAudio(int streamIndex, IAudioSamples samples) {
 		if (null == samples)
 			throw new IllegalArgumentException("NULL input samples");
 
@@ -169,12 +182,9 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 
 	private IStream getStream(int inputStreamIndex) {
 		// the output container must be open
-
-		if (!isOpen())
-			open();
+		openIfNotOpened();
 
 		// if the output stream index does not exists, create it
-
 		if (null == getOutputStreamIndex(inputStreamIndex)) {
 			// If the header has already been written, then it is too late to
 			// establish a new stream, throw, or mask optionally mask, and
@@ -191,7 +201,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 									+ "written.  To mask these exceptions call setMaskLateStreamExceptions()");
 
 			// if an no input container exists, create new a stream from scratch
-
 			if (null == mInputContainer) {
 				//
 				// NOTE: this is where the new stream code will go
@@ -199,7 +208,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 				throw new UnsupportedOperationException(
 						"MediaWriter can not yet create streams without an input container.");
 			}
-
 			// otherwise use the input container as a guide to adding streams
 			else {
 				// the input container must be open
@@ -247,21 +255,24 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 							+ inputStreamIndex);
 
 		// return the coder
-
 		return stream;
 	}
 
-	public Integer getOutputStreamIndex(int inputStreamIndex) {
+	private void openIfNotOpened() {
+		if (!isOpen())
+			open();
+	}
+
+	private Integer getOutputStreamIndex(int inputStreamIndex) {
 		return mOutputStreamIndices.get(inputStreamIndex);
 	}
 
-	public boolean willMaskLateStreamExceptions() {
+	private boolean willMaskLateStreamExceptions() {
 		return mMaskLateStreamException;
 	}
 
 	private boolean addStreamFromContainer(int inputStreamIndex) {
 		// get the input stream
-
 		IStream inputStream = mInputContainer.getStream(inputStreamIndex);
 		IStreamCoder inputCoder = inputStream.getStreamCoder();
 		ICodec.Type inputType = inputCoder.getCodecType();
@@ -273,17 +284,24 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 
 		IContainerFormat format = getContainer().getContainerFormat();
 
+		// TODO 비디오 코덱과 오디오 코덱을 처리한다.
+
 		switch (inputType) {
 		case CODEC_TYPE_AUDIO:
-			addAudioStream(inputStream.getIndex(), inputStream.getId(),
-					format.establishOutputCodecId(inputID),
+			ICodec.ID acodec = this.audioCodec != null ? this.audioCodec
+					: format.establishOutputCodecId(inputID);
+			addAudioStream(inputStream.getIndex(), inputStream.getId(), acodec,
 					inputCoder.getChannels(), inputCoder.getSampleRate());
 			break;
 		case CODEC_TYPE_VIDEO:
-			addVideoStream(inputStream.getIndex(), inputStream.getId(),
-					format.establishOutputCodecId(inputID),
-					inputCoder.getFrameRate(), inputCoder.getWidth(),
-					inputCoder.getHeight());
+			ICodec.ID vcodec = this.videoCodec != null ? this.videoCodec
+					: format.establishOutputCodecId(inputID);
+			int vwidth = this.videoWidth > 0 ? this.videoWidth : inputCoder
+					.getWidth();
+			int vheight = this.videoHeight > 0 ? this.videoHeight : inputCoder
+					.getHeight();
+			addVideoStream(inputStream.getIndex(), inputStream.getId(), vcodec,
+					inputCoder.getFrameRate(), vwidth, vheight);
 			break;
 		default:
 			break;
@@ -291,11 +309,11 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		return true;
 	}
 
-	public boolean isSupportedCodecType(ICodec.Type type) {
+	private boolean isSupportedCodecType(ICodec.Type type) {
 		return (CODEC_TYPE_VIDEO == type || CODEC_TYPE_AUDIO == type);
 	}
 
-	public int addAudioStream(int inputIndex, int streamId, ICodec.ID codecId,
+	private int addAudioStream(int inputIndex, int streamId, ICodec.ID codecId,
 			int channelCount, int sampleRate) {
 		if (codecId == null)
 			throw new IllegalArgumentException("null codecId");
@@ -311,7 +329,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		}
 	}
 
-	public int addAudioStream(int inputIndex, int streamId, ICodec codec,
+	private int addAudioStream(int inputIndex, int streamId, ICodec codec,
 			int channelCount, int sampleRate) {
 		// validate parameteres
 		if (channelCount <= 0)
@@ -339,7 +357,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 
 	private IStream establishStream(int inputIndex, int streamId, ICodec codec) {
 		// validate parameteres and conditions
-
 		if (inputIndex < 0)
 			throw new IllegalArgumentException("invalid input index "
 					+ inputIndex);
@@ -348,24 +365,18 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		if (null == codec)
 			throw new IllegalArgumentException("null codec");
 
-		// if the container is not opened, do so
-
-		if (!isOpen())
-			open();
+		openIfNotOpened();
 
 		// add the new stream at the correct index
-
 		IStream stream = getContainer().addNewStream(codec);
 		if (stream == null)
 			throw new RuntimeException("Unable to create stream id " + streamId
 					+ ", index " + inputIndex + ", codec " + codec);
 
 		// if the stream count is 1, don't force interleave
-
 		setForceInterleave(getContainer().getNumStreams() != 1);
 
 		// return the new video stream
-
 		return stream;
 	}
 
@@ -383,7 +394,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 			coder.setFlag(IStreamCoder.Flags.FLAG_QSCALE, true);
 	}
 
-	public int addVideoStream(int inputIndex, int streamId, ICodec.ID codecId,
+	private int addVideoStream(int inputIndex, int streamId, ICodec.ID codecId,
 			IRational frameRate, int width, int height) {
 		if (codecId == null)
 			throw new IllegalArgumentException("null codecId");
@@ -399,7 +410,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		}
 	}
 
-	public int addVideoStream(int inputIndex, int streamId, ICodec codec,
+	private int addVideoStream(int inputIndex, int streamId, ICodec codec,
 			IRational frameRate, int width, int height) {
 		// validate parameteres
 		if (width <= 0 || height <= 0)
@@ -503,7 +514,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		return stream.getIndex();
 	}
 
-	public IRational getDefaultTimebase() {
+	private IRational getDefaultTimebase() {
 		return DEFAULT_TIMEBASE.copyReference();
 	}
 
@@ -516,13 +527,11 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private void openStream(IStream stream) {
 		// if the coder is not open, open it NOTE: MediaWriter currently
 		// supports audio & video streams
-
 		IStreamCoder coder = stream.getStreamCoder();
 		try {
 			ICodec.Type type = coder.getCodecType();
 			if (!coder.isOpen() && isSupportedCodecType(type)) {
 				// open the coder
-
 				int rv = coder.open(null, null);
 				if (rv < 0)
 					throw new RuntimeException("could not open stream "
@@ -534,14 +543,13 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		}
 	}
 
-	public void open() {
+	private void open() {
 		// open the container
 		if (getContainer().open(getUrl(), IContainer.Type.WRITE,
 				mContainerFormat, true, false) < 0)
 			throw new IllegalArgumentException("could not open: " + getUrl());
 
 		// note that we should close the container opened here
-
 		setShouldCloseContainer(true);
 	}
 
@@ -551,7 +559,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 			close();
 	}
 
-	public void close() {
+	private void close() {
 		int rv;
 
 		// flush coders
@@ -591,7 +599,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		}
 	}
 
-	public void flush() {
+	private void flush() {
 		// flush coders
 		for (IStream stream : mStreams.values()) {
 			IStreamCoder coder = stream.getStreamCoder();
@@ -687,11 +695,9 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private IVideoPicture convertToPicture(int streamIndex,
 			BufferedImage image, long timeStamp) {
 		// lookup the converter
-
 		IConverter videoConverter = mVideoConverters.get(streamIndex);
 
 		// if not found create one
-
 		if (videoConverter == null) {
 			IStream stream = mStreams.get(streamIndex);
 			IStreamCoder coder = stream.getStreamCoder();
@@ -758,7 +764,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	public void onWriteTrailer(IWriteTrailerEvent event) {
 	}
 
-	public void setForceInterleave(boolean forceInterleave) {
+	private void setForceInterleave(boolean forceInterleave) {
 		mForceInterleave = forceInterleave;
 	}
 
