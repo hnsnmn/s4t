@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
+import org.chimi.s4t.domain.job.AudioCodec;
 import org.chimi.s4t.domain.job.OutputFormat;
 import org.chimi.s4t.domain.job.Transcoder;
+import org.chimi.s4t.domain.job.VideoCodec;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +37,8 @@ public class FfmpegTranscoderTest {
 		converter.run(arg0);
 		File multimediaFile = new File("src/test/resources/sample.avi");
 		List<OutputFormat> outputFormats = new ArrayList<OutputFormat>();
-		outputFormats.add(new OutputFormat(160, 120, 150, "h264", "aac"));
+		outputFormats.add(new OutputFormat(160, 120, 150, VideoCodec.H264,
+				AudioCodec.AAC));
 		List<File> transcodedFiles = transcoder.transcode(multimediaFile,
 				outputFormats);
 		assertEquals(1, transcodedFiles.size());

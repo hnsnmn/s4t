@@ -1,15 +1,12 @@
 package org.chimi.s4t.infra.ffmpeg;
 
+import org.chimi.s4t.domain.job.AudioCodec;
 import org.chimi.s4t.domain.job.OutputFormat;
+import org.chimi.s4t.domain.job.VideoCodec;
 import org.junit.Test;
 
 import com.xuggle.mediatool.IMediaReader;
 import com.xuggle.mediatool.ToolFactory;
-import com.xuggle.xuggler.Global;
-import com.xuggle.xuggler.ICodec;
-import com.xuggle.xuggler.IContainer;
-import com.xuggle.xuggler.IStream;
-import com.xuggle.xuggler.IStreamCoder;
 
 public class VideoConverterTest {
 
@@ -18,8 +15,8 @@ public class VideoConverterTest {
 		IMediaReader reader = ToolFactory
 				.makeReader("src/test/resources/sample.avi");
 
-		OutputFormat outputFormat = new OutputFormat(160, 120, 150, "h264",
-				"aac");
+		OutputFormat outputFormat = new OutputFormat(160, 120, 150,
+				VideoCodec.H264, AudioCodec.AAC);
 		VideoConverter writer = new VideoConverter("target/sample.mp4", reader,
 				outputFormat);
 		reader.addListener(writer);
