@@ -7,28 +7,46 @@ import com.xuggle.xuggler.ICodec;
 
 public class CodecValueConverter {
 
-	public static ICodec.ID fromDomain(VideoCodec codecName) {
-		if (codecName == null) {
+	public static ICodec.ID fromDomain(VideoCodec videoCodec) {
+		if (videoCodec == null) {
 			return null;
 		}
-		switch (codecName) {
+		switch (videoCodec) {
 		case H264:
 			return ICodec.ID.CODEC_ID_H264;
-		default:
-			break;
 		}
 		return null;
 	}
 
-	public static ICodec.ID fromDomain(AudioCodec codecName) {
-		if (codecName == null) {
+	public static VideoCodec toDomainVideoCodec(ICodec.ID codecId) {
+		if (codecId == null) {
 			return null;
 		}
-		switch (codecName) {
+		switch (codecId) {
+		case CODEC_ID_H264:
+			return VideoCodec.H264;
+		}
+		return null;
+	}
+
+	public static ICodec.ID fromDomain(AudioCodec audioCodec) {
+		if (audioCodec == null) {
+			return null;
+		}
+		switch (audioCodec) {
 		case AAC:
 			return ICodec.ID.CODEC_ID_AAC;
-		default:
-			break;
+		}
+		return null;
+	}
+
+	public static AudioCodec toDomainAudioCodec(ICodec.ID codecId) {
+		if (codecId == null) {
+			return null;
+		}
+		switch (codecId) {
+		case CODEC_ID_AAC:
+			return AudioCodec.AAC;
 		}
 		return null;
 	}
