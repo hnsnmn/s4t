@@ -32,7 +32,6 @@ import com.xuggle.mediatool.event.IWriteTrailerEvent;
 import com.xuggle.xuggler.Global;
 import com.xuggle.xuggler.IAudioSamples;
 import com.xuggle.xuggler.ICodec;
-import com.xuggle.xuggler.ICodec.ID;
 import com.xuggle.xuggler.IContainer;
 import com.xuggle.xuggler.IContainerFormat;
 import com.xuggle.xuggler.IError;
@@ -42,6 +41,7 @@ import com.xuggle.xuggler.IRational;
 import com.xuggle.xuggler.IStream;
 import com.xuggle.xuggler.IStreamCoder;
 import com.xuggle.xuggler.IVideoPicture;
+import com.xuggle.xuggler.IVideoResampler;
 import com.xuggle.xuggler.video.ConverterFactory;
 import com.xuggle.xuggler.video.IConverter;
 
@@ -75,7 +75,7 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private boolean mForceInterleave = true;
 
 	// mask late stream exception policy
-	private boolean mMaskLateStreamException = false;
+	// private boolean mMaskLateStreamException = false;
 
 	// the input container of packets
 	private final IContainer mInputContainer;
@@ -85,8 +85,10 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private int videoBitRateInKilobytes = 0;
 	private ICodec.ID videoCodec;
 	private ICodec.ID audioCodec;
-	private int videoWidth;
-	private int videoHeight;
+	private int resizingVideoWidth;
+	private int resizingVideoHeight;
+
+	private IVideoResampler videoResampler;
 
 	public VideoConverter(String url, IMediaReader reader,
 			OutputFormat outputFormat) {
@@ -106,8 +108,8 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 				.getVideoCodec());
 		this.audioCodec = CodecValueConverter.fromDomain(outputFormat
 				.getAudioCodec());
-		this.videoWidth = outputFormat.getWidth();
-		this.videoHeight = outputFormat.getHeight();
+		this.resizingVideoWidth = outputFormat.getWidth();
+		this.resizingVideoHeight = outputFormat.getHeight();
 
 		// verify that the input container is a readable type
 		if (inputContainer.getType() != IContainer.Type.READ)
@@ -181,24 +183,39 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	}
 
 	private IStream getStream(int inputStreamIndex) {
-		// the output container must be open
 		openIfNotOpened();
+		createOutputStreamIndexWhenItDoesNotExists(inputStreamIndex);
+		writeHeaderWhenHeaderNotWritten(inputStreamIndex);
+		IStream stream = establishCoderForOutputStreamIndex(inputStreamIndex);
+		return stream;
+	}
 
-		// if the output stream index does not exists, create it
+	private IStream establishCoderForOutputStreamIndex(int inputStreamIndex) {
+		IStream stream = mStreams.get(getOutputStreamIndex(inputStreamIndex));
+		if (null == stream)
+			throw new RuntimeException(
+					"invalid input stream index (no stream): "
+							+ inputStreamIndex);
+		IStreamCoder coder = stream.getStreamCoder();
+		if (null == coder)
+			throw new RuntimeException(
+					"invalid input stream index (no coder): "
+							+ inputStreamIndex);
+		return stream;
+	}
+
+	private void createOutputStreamIndexWhenItDoesNotExists(int inputStreamIndex) {
 		if (null == getOutputStreamIndex(inputStreamIndex)) {
 			// If the header has already been written, then it is too late to
 			// establish a new stream, throw, or mask optionally mask, and
 			// exception regarding the tardy arrival of the new stream
 
 			if (getContainer().isHeaderWritten())
-				if (willMaskLateStreamExceptions())
-					return null;
-				else
-					throw new RuntimeException(
-							"Input stream index "
-									+ inputStreamIndex
-									+ " has not been seen before, but the media header has already been "
-									+ "written.  To mask these exceptions call setMaskLateStreamExceptions()");
+				throw new RuntimeException(
+						"Input stream index "
+								+ inputStreamIndex
+								+ " has not been seen before, but the media header has already been "
+								+ "written.  To mask these exceptions call setMaskLateStreamExceptions()");
 
 			// if an no input container exists, create new a stream from scratch
 			if (null == mInputContainer) {
@@ -224,8 +241,9 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 				}
 			}
 		}
+	}
 
-		// if the header has not been written, do so now
+	private void writeHeaderWhenHeaderNotWritten(int inputStreamIndex) {
 		if (!getContainer().isHeaderWritten()) {
 			// if any of the existing coders are not open, open them now
 			for (IStream stream : mStreams.values())
@@ -240,22 +258,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 						+ getContainer() + " while establishing stream "
 						+ mStreams.get(getOutputStreamIndex(inputStreamIndex)));
 		}
-
-		// establish the coder for the output stream index
-
-		IStream stream = mStreams.get(getOutputStreamIndex(inputStreamIndex));
-		if (null == stream)
-			throw new RuntimeException(
-					"invalid input stream index (no stream): "
-							+ inputStreamIndex);
-		IStreamCoder coder = stream.getStreamCoder();
-		if (null == coder)
-			throw new RuntimeException(
-					"invalid input stream index (no coder): "
-							+ inputStreamIndex);
-
-		// return the coder
-		return stream;
 	}
 
 	private void openIfNotOpened() {
@@ -267,9 +269,9 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		return mOutputStreamIndices.get(inputStreamIndex);
 	}
 
-	private boolean willMaskLateStreamExceptions() {
-		return mMaskLateStreamException;
-	}
+	// private boolean willMaskLateStreamExceptions() {
+	// return mMaskLateStreamException;
+	// }
 
 	private boolean addStreamFromContainer(int inputStreamIndex) {
 		// get the input stream
@@ -284,8 +286,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 
 		IContainerFormat format = getContainer().getContainerFormat();
 
-		// TODO 비디오 코덱과 오디오 코덱을 처리한다.
-
 		switch (inputType) {
 		case CODEC_TYPE_AUDIO:
 			ICodec.ID acodec = this.audioCodec != null ? this.audioCodec
@@ -296,10 +296,10 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		case CODEC_TYPE_VIDEO:
 			ICodec.ID vcodec = this.videoCodec != null ? this.videoCodec
 					: format.establishOutputCodecId(inputID);
-			int vwidth = this.videoWidth > 0 ? this.videoWidth : inputCoder
-					.getWidth();
-			int vheight = this.videoHeight > 0 ? this.videoHeight : inputCoder
-					.getHeight();
+			int vwidth = hasResizingVideoWidth() ? this.resizingVideoWidth
+					: inputCoder.getWidth();
+			int vheight = hasResizingVideoHeight() ? this.resizingVideoHeight
+					: inputCoder.getHeight();
 			addVideoStream(inputStream.getIndex(), inputStream.getId(), vcodec,
 					inputCoder.getFrameRate(), vwidth, vheight);
 			break;
@@ -307,6 +307,14 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 			break;
 		}
 		return true;
+	}
+
+	private boolean hasResizingVideoHeight() {
+		return this.resizingVideoHeight > 0;
+	}
+
+	private boolean hasResizingVideoWidth() {
+		return this.resizingVideoWidth > 0;
 	}
 
 	private boolean isSupportedCodecType(ICodec.Type type) {
@@ -583,13 +591,11 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 		}
 
 		// expunge all referneces to the coders and resamplers
-
 		mStreams.clear();
 		mOpenedStreams.clear();
 		mVideoConverters.clear();
 
 		// if we're supposed to, close the container
-
 		if (getShouldCloseContainer()) {
 			if ((rv = getContainer().close()) < 0)
 				throw new RuntimeException("error " + IError.make(rv)
@@ -667,7 +673,6 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 	private void encodeVideo(int streamIndex, BufferedImage image,
 			long timeStamp, TimeUnit timeUnit) {
 		// verify parameters
-
 		if (null == image)
 			throw new IllegalArgumentException("NULL input image");
 		if (null == timeUnit)
@@ -732,12 +737,16 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 			throw new IllegalArgumentException("stream[" + streamIndex
 					+ "] is not video");
 		}
+
+		IVideoPicture out = makeResizedPicture(picture);
+
 		// encode video picture
 
 		// encode the video packet
 		IPacket packet = IPacket.make();
 		try {
-			if (stream.getStreamCoder().encodeVideo(packet, picture, 0) < 0)
+			if (stream.getStreamCoder().encodeVideo(packet, out /* picture */,
+					0) < 0)
 				throw new RuntimeException("failed to encode video");
 
 			if (packet.isComplete())
@@ -746,6 +755,22 @@ public class VideoConverter extends AMediaCoderMixin implements IMediaListener {
 			if (packet != null)
 				packet.delete();
 		}
+	}
+
+	private IVideoPicture makeResizedPicture(IVideoPicture picture) {
+		if (!hasResizingVideoWidth() && !hasResizingVideoHeight()) {
+			return picture;
+		}
+		if (videoResampler == null) {
+			videoResampler = IVideoResampler.make(this.resizingVideoWidth,
+					this.resizingVideoHeight, picture.getPixelType(),
+					picture.getWidth(), picture.getHeight(),
+					picture.getPixelType());
+		}
+		IVideoPicture out = IVideoPicture.make(picture.getPixelType(),
+				this.resizingVideoWidth, this.resizingVideoHeight);
+		videoResampler.resample(out, picture);
+		return out;
 	}
 
 	private void encodeVideo(int streamIndex, IVideoPicture picture) {
