@@ -12,6 +12,12 @@ import com.xuggle.mediatool.ToolFactory;
 
 public class FfmpegTranscoder implements Transcoder {
 
+	private NamingRule namingRule;
+
+	public FfmpegTranscoder(NamingRule namingRule) {
+		this.namingRule = namingRule;
+	}
+
 	@Override
 	public List<File> transcode(File multimediaFile,
 			List<OutputFormat> outputFormats) {
@@ -26,7 +32,7 @@ public class FfmpegTranscoder implements Transcoder {
 		IMediaReader reader = ToolFactory.makeReader(sourceFile
 				.getAbsolutePath());
 
-		String outputFile = "outputFile.mp4";
+		String outputFile = getFileName(format);
 		VideoConverter converter = new VideoConverter(outputFile, reader,
 				format);
 		reader.addListener(converter);
@@ -34,6 +40,10 @@ public class FfmpegTranscoder implements Transcoder {
 			do {
 			} while (false);
 		return new File(outputFile);
+	}
+
+	private String getFileName(OutputFormat format) {
+		return namingRule.createName(format);
 	}
 
 }

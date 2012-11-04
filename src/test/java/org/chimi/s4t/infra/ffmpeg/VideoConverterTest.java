@@ -3,6 +3,7 @@ package org.chimi.s4t.infra.ffmpeg;
 import java.io.File;
 
 import org.chimi.s4t.domain.job.AudioCodec;
+import org.chimi.s4t.domain.job.Container;
 import org.chimi.s4t.domain.job.OutputFormat;
 import org.chimi.s4t.domain.job.VideoCodec;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class VideoConverterTest {
 		IMediaReader reader = ToolFactory.makeReader(SOURCE_FILE);
 
 		OutputFormat outputFormat = new OutputFormat(WIDTH, HEIGHT, BITRATE,
-				VideoCodec.H264, AudioCodec.AAC);
+				Container.MP4, VideoCodec.H264, AudioCodec.AAC);
 		VideoConverter writer = new VideoConverter(TRANSCODED_FILE, reader,
 				outputFormat);
 		reader.addListener(writer);
