@@ -44,8 +44,7 @@ public class VideoFormatVerifier {
 	}
 
 	private void assertExtention() {
-		assertEquals(expectedFormat.getContainer().getFileExtension(),
-				fileExtenstion());
+		assertEquals(expectedFormat.getFileExtension(), fileExtenstion());
 	}
 
 	private String fileExtenstion() {

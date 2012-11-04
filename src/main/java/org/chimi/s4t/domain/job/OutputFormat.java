@@ -31,8 +31,8 @@ public class OutputFormat {
 		return bitrate;
 	}
 
-	public Container getContainer() {
-		return container;
+	public String getFileExtension() {
+		return container.getFileExtension();
 	}
 
 	public VideoCodec getVideoCodec() {
