@@ -34,7 +34,7 @@ public class VideoFormatVerifier {
 
 	public void verify() {
 		try {
-			assertExtention();
+			assertExtension();
 			makeContainer();
 			extractMetaInfoOfVideo();
 			assertVideoFile();
@@ -43,7 +43,7 @@ public class VideoFormatVerifier {
 		}
 	}
 
-	private void assertExtention() {
+	private void assertExtension() {
 		assertEquals(expectedFormat.getFileExtension(), fileExtenstion());
 	}
 
