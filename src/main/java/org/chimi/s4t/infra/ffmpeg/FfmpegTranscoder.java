@@ -43,7 +43,7 @@ public class FfmpegTranscoder implements Transcoder {
 	}
 
 	private String getFileName(OutputFormat format) {
-		return "outputFile." + format.getFileExtension(); // 기존 "outputFile.mp4" // namingRule.createName(format);
+		return namingRule.createName(format);
 	}
 
 }

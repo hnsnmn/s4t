@@ -2,7 +2,6 @@ package org.chimi.s4t.infra.ffmpeg;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -15,21 +14,17 @@ import org.chimi.s4t.domain.job.Transcoder;
 import org.chimi.s4t.domain.job.VideoCodec;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
 public class FfmpegTranscoderTest {
 
 	private Transcoder transcoder;
 	private File multimediaFile;
 	private List<OutputFormat> outputFormats;
 
-	@Mock
 	private NamingRule namingRule;
 
 	private OutputFormat mp4Format;
+	private OutputFormat mp4Format2;
 	private OutputFormat aviFormat;
 
 	@Before
@@ -37,10 +32,10 @@ public class FfmpegTranscoderTest {
 		outputFormats = new ArrayList<OutputFormat>();
 		mp4Format = new OutputFormat(160, 120, 150, Container.MP4,
 				VideoCodec.H264, AudioCodec.AAC);
+		mp4Format2 = new OutputFormat(80, 60, 80, Container.MP4,
+				VideoCodec.H264, AudioCodec.AAC);
 		aviFormat = new OutputFormat(160, 120, 150, Container.AVI,
 				VideoCodec.MPEG4, AudioCodec.MP3);
-		when(namingRule.createName(mp4Format)).thenReturn("target/result.mp4");
-		when(namingRule.createName(aviFormat)).thenReturn("target/result.avi");
 		multimediaFile = new File("src/test/resources/sample.avi");
 
 		transcoder = new FfmpegTranscoder(namingRule);
@@ -55,15 +50,24 @@ public class FfmpegTranscoderTest {
 	private void executeTranscoderAndAssert() {
 		List<File> transcodedFiles = transcoder.transcode(multimediaFile,
 				outputFormats);
-		assertEquals(1, transcodedFiles.size());
-		assertTrue(transcodedFiles.get(0).exists());
-		VideoFormatVerifier.verifyVideoFormat(outputFormats.get(0),
-				transcodedFiles.get(0));
+		assertEquals(outputFormats.size(), transcodedFiles.size());
+		for (int i = 0; i < outputFormats.size(); i++) {
+			assertTrue(transcodedFiles.get(i).exists());
+			VideoFormatVerifier.verifyVideoFormat(outputFormats.get(i),
+					transcodedFiles.get(i));
+		}
 	}
 
 	@Test
 	public void transcodeWithOneAviOutputFormat() {
 		outputFormats.add(aviFormat);
+		executeTranscoderAndAssert();
+	}
+
+	@Test
+	public void transcodeWithTwoMp4OutputFormats() {
+		outputFormats.add(mp4Format);
+		outputFormats.add(mp4Format2);
 		executeTranscoderAndAssert();
 	}
 }
