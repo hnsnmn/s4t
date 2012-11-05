@@ -49,6 +49,10 @@ public class FfmpegTranscoderTest {
 	@Test
 	public void transcodeWithOneMp4OutputFormat() {
 		outputFormats.add(mp4Format);
+		executeTranscoderAndAssert();
+	}
+
+	private void executeTranscoderAndAssert() {
 		List<File> transcodedFiles = transcoder.transcode(multimediaFile,
 				outputFormats);
 		assertEquals(1, transcodedFiles.size());
@@ -60,11 +64,6 @@ public class FfmpegTranscoderTest {
 	@Test
 	public void transcodeWithOneAviOutputFormat() {
 		outputFormats.add(aviFormat);
-		List<File> transcodedFiles = transcoder.transcode(multimediaFile,
-				outputFormats);
-		assertEquals(1, transcodedFiles.size());
-		assertTrue(transcodedFiles.get(0).exists());
-		VideoFormatVerifier.verifyVideoFormat(outputFormats.get(0),
-				transcodedFiles.get(0));
+		executeTranscoderAndAssert();
 	}
 }
