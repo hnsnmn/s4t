@@ -21,8 +21,6 @@ public class FfmpegTranscoderTest {
 	private File multimediaFile;
 	private List<OutputFormat> outputFormats;
 
-	private NamingRule namingRule;
-
 	private OutputFormat mp4Format;
 	private OutputFormat mp4Format2;
 	private OutputFormat aviFormat;
@@ -38,7 +36,7 @@ public class FfmpegTranscoderTest {
 				VideoCodec.MPEG4, AudioCodec.MP3);
 		multimediaFile = new File("src/test/resources/sample.avi");
 
-		transcoder = new FfmpegTranscoder(namingRule);
+		transcoder = new FfmpegTranscoder(NamingRule.DEFAULT);
 	}
 
 	@Test
