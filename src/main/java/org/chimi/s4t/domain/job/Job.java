@@ -1,6 +1,7 @@
 package org.chimi.s4t.domain.job;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 public class Job {
@@ -15,6 +16,12 @@ public class Job {
 	private List<OutputFormat> outputFormats;
 	private State state;
 	private Exception occurredException;
+
+	public Job(MediaSourceFile mediaSourceFile,
+			DestinationStorage destinationStorage,
+			List<OutputFormat> outputFormats) {
+		this(null, mediaSourceFile, destinationStorage, outputFormats);
+	}
 
 	public Job(Long id, MediaSourceFile mediaSourceFile,
 			DestinationStorage destinationStorage,
@@ -103,6 +110,14 @@ public class Job {
 
 	private void completed() {
 		changeState(Job.State.COMPLETED);
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public List<OutputFormat> getOutputFormats() {
+		return Collections.unmodifiableList(outputFormats);
 	}
 
 }
