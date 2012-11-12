@@ -9,6 +9,7 @@ public class AddJobRequest {
 	private String mediaSource;
 	private String destinationStorage;
 	private List<OutputFormat> outputFormats;
+	private String resultCallback;
 
 	public String getMediaSource() {
 		return mediaSource;
@@ -32,6 +33,14 @@ public class AddJobRequest {
 
 	public void setOutputFormats(List<OutputFormat> outputFormats) {
 		this.outputFormats = outputFormats;
+	}
+
+	public String getResultCallback() {
+		return resultCallback;
+	}
+
+	public void setResultCallback(String resultCallback) {
+		this.resultCallback = resultCallback;
 	}
 
 }

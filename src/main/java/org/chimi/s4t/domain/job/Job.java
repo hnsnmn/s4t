@@ -11,25 +11,29 @@ public class Job {
 	}
 
 	private Long id;
+	private State state;
+
 	private MediaSourceFile mediaSourceFile;
 	private DestinationStorage destinationStorage;
 	private List<OutputFormat> outputFormats;
-	private State state;
-	private Exception occurredException;
+	private ResultCallback callback;
+
+	private String exceptionMessage;
 
 	public Job(MediaSourceFile mediaSourceFile,
 			DestinationStorage destinationStorage,
-			List<OutputFormat> outputFormats) {
-		this(null, mediaSourceFile, destinationStorage, outputFormats);
+			List<OutputFormat> outputFormats, ResultCallback callback) {
+		this(null, mediaSourceFile, destinationStorage, outputFormats, callback);
 	}
 
 	public Job(Long id, MediaSourceFile mediaSourceFile,
 			DestinationStorage destinationStorage,
-			List<OutputFormat> outputFormats) {
+			List<OutputFormat> outputFormats, ResultCallback callback) {
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
 		this.destinationStorage = destinationStorage;
 		this.outputFormats = outputFormats;
+		this.callback = callback;
 	}
 
 	public boolean isWaiting() {
@@ -44,28 +48,27 @@ public class Job {
 		return state == State.COMPLETED;
 	}
 
-	private boolean isExceptionOccurred() {
-		return occurredException != null;
+	public boolean isExceptionOccurred() {
+		return exceptionMessage != null;
 	}
 
 	public State getLastState() {
 		return state;
 	}
 
-	public Exception getOccurredException() {
-		return occurredException;
+	public String getExceptionMessage() {
+		return exceptionMessage;
 	}
 
 	public void transcode(Transcoder transcoder,
-			ThumbnailExtractor thumbnailExtractor,
-			JobResultNotifier jobResultNotifier) {
+			ThumbnailExtractor thumbnailExtractor) {
 		try {
 			File multimediaFile = copyMultimediaSourceToLocal();
 			List<File> multimediaFiles = transcode(multimediaFile, transcoder);
 			List<File> thumbnails = extractThumbnail(multimediaFile,
 					thumbnailExtractor);
 			storeCreatedFilesToStorage(multimediaFiles, thumbnails);
-			notifyJobResultToRequester(jobResultNotifier);
+			notifyJobResultToRequester();
 			completed();
 		} catch (RuntimeException ex) {
 			exceptionOccurred(ex);
@@ -78,7 +81,8 @@ public class Job {
 	}
 
 	private void exceptionOccurred(RuntimeException ex) {
-		occurredException = ex;
+		exceptionMessage = ex.getMessage();
+		callback.nofiyFailedResult(id, state, exceptionMessage);
 	}
 
 	private File copyMultimediaSourceToLocal() {
@@ -103,9 +107,9 @@ public class Job {
 		destinationStorage.save(multimediaFiles, thumbnails);
 	}
 
-	private void notifyJobResultToRequester(JobResultNotifier jobResultNotifier) {
+	private void notifyJobResultToRequester() {
 		changeState(Job.State.NOTIFYING);
-		jobResultNotifier.notifyToRequester(id);
+		callback.nofiySuccessResult(id);
 	}
 
 	private void completed() {

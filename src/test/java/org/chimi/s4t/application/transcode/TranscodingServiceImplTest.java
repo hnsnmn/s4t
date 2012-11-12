@@ -25,9 +25,9 @@ import org.chimi.s4t.domain.job.DestinationStorage;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.JobRepository;
-import org.chimi.s4t.domain.job.JobResultNotifier;
 import org.chimi.s4t.domain.job.MediaSourceFile;
 import org.chimi.s4t.domain.job.OutputFormat;
+import org.chimi.s4t.domain.job.ResultCallback;
 import org.chimi.s4t.domain.job.ThumbnailExtractor;
 import org.chimi.s4t.domain.job.Transcoder;
 import org.junit.Before;
@@ -44,6 +44,9 @@ public class TranscodingServiceImplTest {
 	private MediaSourceFile mediaSourceFile;
 	@Mock
 	private DestinationStorage destinationStorage;
+	@Mock
+	private ResultCallback callback;
+
 	private List<OutputFormat> outputFormats = new ArrayList<OutputFormat>();
 	private Job mockJob;
 
@@ -51,8 +54,6 @@ public class TranscodingServiceImplTest {
 	private Transcoder transcoder;
 	@Mock
 	private ThumbnailExtractor thumbnailExtractor;
-	@Mock
-	private JobResultNotifier jobResultNotifier;
 	@Mock
 	private JobRepository jobRepository;
 
@@ -66,11 +67,11 @@ public class TranscodingServiceImplTest {
 	@Before
 	public void setup() {
 		mockJob = new Job(jobId, mediaSourceFile, destinationStorage,
-				outputFormats);
+				outputFormats, callback);
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 
 		transcodingService = new TranscodingServiceImpl(transcoder,
-				thumbnailExtractor, jobResultNotifier, jobRepository);
+				thumbnailExtractor, jobRepository);
 
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 		when(transcoder.transcode(mockMultimediaFile, outputFormats))
@@ -89,7 +90,8 @@ public class TranscodingServiceImplTest {
 		assertTrue(job.isFinished());
 		assertTrue(job.isSuccess());
 		assertEquals(Job.State.COMPLETED, job.getLastState());
-		assertNull(job.getOccurredException());
+		assertFalse(job.isExceptionOccurred());
+		assertNull(job.getExceptionMessage());
 
 		CollaborationVerifier colVerifier = new CollaborationVerifier();
 		colVerifier.verifyCollaboration();
@@ -110,7 +112,6 @@ public class TranscodingServiceImplTest {
 		colVerifier.transcoderNever = true;
 		colVerifier.thumbnailExtractorNever = true;
 		colVerifier.destinationStorageNever = true;
-		colVerifier.jobResultNotifierNever = true;
 
 		colVerifier.verifyCollaboration();
 	}
@@ -128,7 +129,8 @@ public class TranscodingServiceImplTest {
 		assertTrue(job.isFinished());
 		assertFalse(job.isSuccess());
 		assertEquals(expectedLastState, job.getLastState());
-		assertNotNull(job.getOccurredException());
+		assertTrue(job.isExceptionOccurred());
+		assertNotNull(job.getExceptionMessage());
 	}
 
 	@Test
@@ -141,7 +143,6 @@ public class TranscodingServiceImplTest {
 		CollaborationVerifier colVerifier = new CollaborationVerifier();
 		colVerifier.thumbnailExtractorNever = true;
 		colVerifier.destinationStorageNever = true;
-		colVerifier.jobResultNotifierNever = true;
 
 		colVerifier.verifyCollaboration();
 	}
@@ -155,7 +156,6 @@ public class TranscodingServiceImplTest {
 
 		CollaborationVerifier colVerifier = new CollaborationVerifier();
 		colVerifier.destinationStorageNever = true;
-		colVerifier.jobResultNotifierNever = true;
 
 		colVerifier.verifyCollaboration();
 	}
@@ -168,19 +168,6 @@ public class TranscodingServiceImplTest {
 		executeFailingTranscodeAndAssertFail(Job.State.STORING);
 
 		CollaborationVerifier colVerifier = new CollaborationVerifier();
-		colVerifier.jobResultNotifierNever = true;
-
-		colVerifier.verifyCollaboration();
-	}
-
-	@Test
-	public void transcodeFailBecauseExceptionOccuredAtJobResultNotifier() {
-		doThrow(mockException).when(jobResultNotifier).notifyToRequester(jobId);
-
-		assertJobIsWaitingState();
-		executeFailingTranscodeAndAssertFail(Job.State.NOTIFYING);
-
-		CollaborationVerifier colVerifier = new CollaborationVerifier();
 
 		colVerifier.verifyCollaboration();
 	}
@@ -189,7 +176,6 @@ public class TranscodingServiceImplTest {
 		public boolean transcoderNever;
 		public boolean thumbnailExtractorNever;
 		public boolean destinationStorageNever;
-		public boolean jobResultNotifierNever;
 
 		public void verifyCollaboration() {
 			if (this.transcoderNever)
@@ -212,11 +198,6 @@ public class TranscodingServiceImplTest {
 			else
 				verify(destinationStorage, only()).save(mockMultimediaFiles,
 						mockThumbnails);
-
-			if (this.jobResultNotifierNever)
-				verify(jobResultNotifier, never()).notifyToRequester(jobId);
-			else
-				verify(jobResultNotifier, only()).notifyToRequester(jobId);
 		}
 
 	}

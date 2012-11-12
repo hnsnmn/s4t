@@ -13,6 +13,8 @@ import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.MediaSourceFile;
 import org.chimi.s4t.domain.job.MediaSourceFileFactory;
+import org.chimi.s4t.domain.job.ResultCallback;
+import org.chimi.s4t.domain.job.ResultCallbackFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -26,11 +28,17 @@ public class AddJobServiceImplTest {
 	@Mock
 	private MediaSourceFileFactory mediaSourceFileFactory;
 	@Mock
+	private MediaSourceFile mockMediaSourceFile;
+
+	@Mock
 	private DestinationStorageFactory destinationStorageFactory;
 	@Mock
-	private MediaSourceFile mockMediaSourceFile;
-	@Mock
 	private DestinationStorage mockDestinationStorage;
+
+	@Mock
+	private ResultCallbackFactory resultCallbackFactory;
+	@Mock
+	private ResultCallback mockResultCallback;
 
 	@Test
 	public void addJob() {
@@ -39,6 +47,8 @@ public class AddJobServiceImplTest {
 				.thenReturn(mockMediaSourceFile);
 		when(destinationStorageFactory.create(request.getDestinationStorage()))
 				.thenReturn(mockDestinationStorage);
+		when(resultCallbackFactory.create(request.getResultCallback()))
+				.thenReturn(mockResultCallback);
 
 		final Long mockJobId = new Long(1);
 		Job mockSavedJob = mock(Job.class);
@@ -47,7 +57,7 @@ public class AddJobServiceImplTest {
 
 		AddJobService addJobService = new AddJobServiceImpl(
 				mediaSourceFileFactory, destinationStorageFactory,
-				jobRepository);
+				resultCallbackFactory, jobRepository);
 		Long jobId = addJobService.addJob(request);
 
 		assertNotNull(jobId);
@@ -55,5 +65,7 @@ public class AddJobServiceImplTest {
 		verify(mediaSourceFileFactory, only()).create(request.getMediaSource());
 		verify(destinationStorageFactory, only()).create(
 				request.getDestinationStorage());
+		verify(resultCallbackFactory, only()).create(
+				request.getResultCallback());
 	}
 }
