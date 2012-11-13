@@ -1,6 +1,7 @@
 package org.chimi.s4t.domain.job;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.never;
@@ -44,6 +45,9 @@ public class JobTest {
 	public void jobShouldBeCreatedStateWhenCreated() {
 		Job job = new Job(mediaSource, destination, outputFormats, callback);
 		assertEquals(Job.State.CREATED, job.getLastState());
+		assertFalse(job.isFinished());
+		assertFalse(job.isSuccess());
+		assertFalse(job.isExceptionOccurred());
 	}
 
 	@Test
@@ -61,6 +65,8 @@ public class JobTest {
 		job.transcode(transcoder, thumbnailExtractor);
 
 		assertEquals(Job.State.COMPLETED, job.getLastState());
+		assertTrue(job.isSuccess());
+		assertTrue(job.isFinished());
 
 		verify(mediaSource, only()).getSourceFile();
 		verify(destination, only()).save(multimediaFiles, thumbnails);
@@ -82,6 +88,8 @@ public class JobTest {
 		} catch (Exception ex) {
 		}
 		assertEquals(Job.State.MEDIASOURCECOPYING, job.getLastState());
+		assertFalse(job.isSuccess());
+		assertTrue(job.isFinished());
 		assertTrue(job.isExceptionOccurred());
 
 		verify(mediaSource, only()).getSourceFile();

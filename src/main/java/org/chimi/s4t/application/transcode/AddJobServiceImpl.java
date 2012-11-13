@@ -8,8 +8,11 @@ import org.chimi.s4t.domain.job.MediaSourceFile;
 import org.chimi.s4t.domain.job.MediaSourceFileFactory;
 import org.chimi.s4t.domain.job.ResultCallback;
 import org.chimi.s4t.domain.job.ResultCallbackFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AddJobServiceImpl implements AddJobService {
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private MediaSourceFileFactory mediaSourceFileFactory;
 	private DestinationStorageFactory destinationStorageFactory;
@@ -34,18 +37,28 @@ public class AddJobServiceImpl implements AddJobService {
 	}
 
 	private Job createJob(AddJobRequest request) {
-		MediaSourceFile mediaSourceFile = mediaSourceFileFactory.create(request
-				.getMediaSource());
-		DestinationStorage destinationStorage = destinationStorageFactory
-				.create(request.getDestinationStorage());
-		ResultCallback resultCallback = resultCallbackFactory.create(request
-				.getResultCallback());
-		return new Job(mediaSourceFile, destinationStorage,
-				request.getOutputFormats(), resultCallback);
+		try {
+			MediaSourceFile mediaSourceFile = mediaSourceFileFactory
+					.create(request.getMediaSource());
+			DestinationStorage destinationStorage = destinationStorageFactory
+					.create(request.getDestinationStorage());
+			ResultCallback resultCallback = resultCallbackFactory
+					.create(request.getResultCallback());
+			return new Job(mediaSourceFile, destinationStorage,
+					request.getOutputFormats(), resultCallback);
+		} catch (RuntimeException ex) {
+			logger.error("fail to create Job from request {}", request, ex);
+			throw ex;
+		}
 	}
 
 	private Job saveJob(Job job) {
-		return jobRepository.save(job);
+		try {
+			return jobRepository.save(job);
+		} catch (RuntimeException ex) {
+			logger.error("fail to save Job to Repository", ex);
+			throw ex;
+		}
 	}
 
 }

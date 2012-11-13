@@ -4,8 +4,12 @@ import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.ThumbnailExtractor;
 import org.chimi.s4t.domain.job.Transcoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TranscodingServiceImpl implements TranscodingService {
+	private Logger logger = LoggerFactory.getLogger(getClass());
+
 	private Transcoder transcoder;
 	private ThumbnailExtractor thumbnailExtractor;
 	private JobRepository jobRepository;
@@ -20,7 +24,22 @@ public class TranscodingServiceImpl implements TranscodingService {
 	@Override
 	public void transcode(Long jobId) {
 		Job job = jobRepository.findById(jobId);
-		job.transcode(transcoder, thumbnailExtractor);
+		checkJobExists(jobId, job);
+		transcode(job);
+	}
+
+	private void transcode(Job job) {
+		try {
+			job.transcode(transcoder, thumbnailExtractor);
+		} catch (RuntimeException ex) {
+			logger.error("fail to do transcoding job {}", job.getId(), ex);
+		}
+	}
+
+	private void checkJobExists(Long jobId, Job job) {
+		if (job == null) {
+			throw new JobNotFoundException(jobId);
+		}
 	}
 
 }
