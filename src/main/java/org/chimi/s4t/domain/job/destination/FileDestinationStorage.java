@@ -1,4 +1,4 @@
-package org.chimi.s4t.domain.job;
+package org.chimi.s4t.domain.job.destination;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+
+import org.chimi.s4t.domain.job.DestinationStorage;
 
 public class FileDestinationStorage implements DestinationStorage {
 

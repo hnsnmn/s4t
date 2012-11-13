@@ -1,12 +1,15 @@
-package org.chimi.s4t.domain.job;
+package org.chimi.s4t.domain.job.mediasource;
 
 import static org.junit.Assert.*;
 
+import org.chimi.s4t.domain.job.MediaSourceFile;
+import org.chimi.s4t.domain.job.MediaSourceFileFactory;
+import org.chimi.s4t.domain.job.mediasource.LocalStorageMediaSourceFile;
 import org.junit.Test;
 
 public class MediaSourceFileFactoryDefaultTest {
 
-	private MediaSourceFileFactory factory = MediaSourceFileFactory.DEFAULT;
+	private MediaSourceFileFactory factory = new DefaultMediaSourceFileFactory();
 
 	@Test
 	public void createLocalStorageMediaSourceFile() {

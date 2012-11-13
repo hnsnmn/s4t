@@ -1,13 +1,16 @@
-package org.chimi.s4t.domain.job;
+package org.chimi.s4t.domain.job.destination;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.chimi.s4t.domain.job.DestinationStorage;
+import org.chimi.s4t.domain.job.DestinationStorageFactory;
+import org.chimi.s4t.domain.job.destination.FileDestinationStorage;
 import org.junit.Test;
 
-public class DestinationStorageFactoryDefaultTest {
+public class DefaultDestinationStorageFactoryTest {
 
-	private DestinationStorageFactory factory = DestinationStorageFactory.DEFAULT;
+	private DestinationStorageFactory factory = new DefaultDestinationStorageFactory();
 
 	@Test
 	public void createFileDestinationStorage() {
