@@ -1,5 +1,7 @@
 package org.chimi.s4t.domain.job;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
@@ -39,7 +41,13 @@ public class JobTest {
 	private File sourceFile;
 
 	@Test
-	public void successfully() {
+	public void jobShouldBeCreatedStateWhenCreated() {
+		Job job = new Job(mediaSource, destination, outputFormats, callback);
+		assertEquals(Job.State.CREATED, job.getLastState());
+	}
+
+	@Test
+	public void transcodeSuccessfully() {
 		long jobId = 1L;
 
 		when(mediaSource.getSourceFile()).thenReturn(sourceFile);
@@ -52,13 +60,15 @@ public class JobTest {
 				callback);
 		job.transcode(transcoder, thumbnailExtractor);
 
+		assertEquals(Job.State.COMPLETED, job.getLastState());
+
 		verify(mediaSource, only()).getSourceFile();
 		verify(destination, only()).save(multimediaFiles, thumbnails);
 		verify(callback, only()).nofiySuccessResult(jobId);
 	}
 
 	@Test
-	public void failGetSourceFile() {
+	public void jobShouldThrowExceptionWhenFailGetSourceFile() {
 		long jobId = 1L;
 
 		RuntimeException exception = new RuntimeException("exception");
@@ -71,6 +81,8 @@ public class JobTest {
 			fail("발생해야 함");
 		} catch (Exception ex) {
 		}
+		assertEquals(Job.State.MEDIASOURCECOPYING, job.getLastState());
+		assertTrue(job.isExceptionOccurred());
 
 		verify(mediaSource, only()).getSourceFile();
 		verify(destination, never()).save(multimediaFiles, thumbnails);
