@@ -4,17 +4,15 @@ import java.io.File;
 
 import org.chimi.s4t.domain.job.MediaSourceFile;
 
-public class LocalStorageMediaSourceFile implements MediaSourceFile {
+public class LocalStorageMediaSourceFile extends MediaSourceFile {
 
-	private String filePath;
-
-	public LocalStorageMediaSourceFile(String filePath) {
-		this.filePath = filePath;
+	public LocalStorageMediaSourceFile(String url) {
+		super(url);
 	}
 
 	@Override
 	public File getSourceFile() {
-		return new File(filePath);
+		return new File(getUrl());
 	}
 
 }

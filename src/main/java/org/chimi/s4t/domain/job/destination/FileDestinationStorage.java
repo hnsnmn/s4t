@@ -11,19 +11,17 @@ import java.util.List;
 
 import org.chimi.s4t.domain.job.DestinationStorage;
 
-public class FileDestinationStorage implements DestinationStorage {
+public class FileDestinationStorage extends DestinationStorage {
 
-	private String folder;
-
-	public FileDestinationStorage(String folder) {
-		this.folder = folder;
+	public FileDestinationStorage(String url) {
+		super(url);
 	}
 
 	@Override
 	public void save(List<File> multimediaFiles, List<File> thumbnails) {
 		try {
-			copy(multimediaFiles, folder);
-			copy(thumbnails, folder);
+			copy(multimediaFiles, getUrl());
+			copy(thumbnails, getUrl());
 		} catch (IOException ex) {
 			throw new RuntimeException("Fail to copy: " + ex.getMessage(), ex);
 		}

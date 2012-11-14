@@ -13,14 +13,14 @@ public class DefaultDestinationStorageFactoryTest {
 	private DestinationStorageFactory factory = new DefaultDestinationStorageFactory();
 
 	@Test
-	public void createFileDestinationStorage() {
+	public void shouldCreateFileDestinationStorage() {
 		DestinationStorage destinationStorage = factory
 				.create("file://usr/local");
 		assertTrue(destinationStorage instanceof FileDestinationStorage);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void createNotSupportedDestination() {
+	public void shouldThrowExceptionWhenUrlIsNotSupported() {
 		factory.create("xxx://www.daum.net/");
 		fail("must throw exception");
 	}

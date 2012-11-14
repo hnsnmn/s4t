@@ -2,7 +2,17 @@ package org.chimi.s4t.domain.job;
 
 import java.io.File;
 
-public interface MediaSourceFile {
+public abstract class MediaSourceFile {
 
-	public File getSourceFile();
+	private String url;
+
+	public MediaSourceFile(String url) {
+		this.url = url;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public abstract File getSourceFile();
 }
