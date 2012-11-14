@@ -37,6 +37,14 @@ public class Job {
 		this.state = State.WAITING;
 	}
 
+	public Long getId() {
+		return id;
+	}
+
+	public List<OutputFormat> getOutputFormats() {
+		return Collections.unmodifiableList(outputFormats);
+	}
+
 	public boolean isWaiting() {
 		return state == State.WAITING;
 	}
@@ -115,14 +123,6 @@ public class Job {
 
 	private void completed() {
 		changeState(Job.State.COMPLETED);
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public List<OutputFormat> getOutputFormats() {
-		return Collections.unmodifiableList(outputFormats);
 	}
 
 	public Exporter export(Exporter exporter) {
