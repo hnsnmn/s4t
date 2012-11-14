@@ -33,6 +33,7 @@ public class TranscodingServiceImpl implements TranscodingService {
 			job.transcode(transcoder, thumbnailExtractor);
 		} catch (RuntimeException ex) {
 			logger.error("fail to do transcoding job {}", job.getId(), ex);
+			throw ex;
 		}
 	}
 

@@ -7,7 +7,7 @@ import java.util.List;
 public class Job {
 
 	public static enum State {
-		CREATED, MEDIASOURCECOPYING, TRANSCODING, EXTRACTINGTHUMBNAIL, STORING, NOTIFYING, COMPLETED
+		WAITING, MEDIASOURCECOPYING, TRANSCODING, EXTRACTINGTHUMBNAIL, STORING, NOTIFYING, COMPLETED
 	}
 
 	private Long id;
@@ -34,11 +34,11 @@ public class Job {
 		this.destinationStorage = destinationStorage;
 		this.outputFormats = outputFormats;
 		this.callback = callback;
-		this.state = State.CREATED;
+		this.state = State.WAITING;
 	}
 
 	public boolean isWaiting() {
-		return state == null;
+		return state == State.WAITING;
 	}
 
 	public boolean isFinished() {

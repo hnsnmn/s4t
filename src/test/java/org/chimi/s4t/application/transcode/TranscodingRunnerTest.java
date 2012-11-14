@@ -1,9 +1,10 @@
 package org.chimi.s4t.application.transcode;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.chimi.s4t.domain.job.Job;
-import org.chimi.s4t.domain.job.JobRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,32 +19,24 @@ public class TranscodingRunnerTest {
 	@Mock
 	private TranscodingService transcodingService;
 	@Mock
-	private JobRepository jobRepository;
+	private JobQueue jobQueue;
 
 	private TranscodingRunner runner;
 
 	@Before
 	public void setup() {
-		runner = new TranscodingRunner(transcodingService, jobRepository);
+		runner = new TranscodingRunner(transcodingService, jobQueue);
 	}
 
 	@Test
-	public void runTranscodingSuccessfullyWhenJobIsExists() {
+	public void runTranscodingWhenJobQueueIsNotEmpty() {
 		when(job.getId()).thenReturn(1L);
-		when(jobRepository.findEldestJobOfCreatedState()).thenReturn(job);
+		when(jobQueue.nextJobId()).thenReturn(1L).thenThrow(
+				new JobQueue.ClosedException());
 
 		runner.run();
 
 		verify(transcodingService, only()).transcode(1L);
-	}
-
-	@Test
-	public void dontRunTranscodingWhenJobIsNotExists() {
-		when(jobRepository.findEldestJobOfCreatedState()).thenReturn(null);
-
-		runner.run();
-
-		verify(transcodingService, never()).transcode(anyLong());
 	}
 
 }
