@@ -2,13 +2,20 @@ package org.chimi.s4t.infra.repositories;
 
 import java.util.List;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.TableGenerator;
 
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.Job.State;
@@ -20,6 +27,8 @@ public class JobData {
 
 	@Id
 	@Column(name = "JOB_ID")
+	@TableGenerator(name = "JOB_ID_GEN", table = "ID_GENERATOR", pkColumnName = "ENTITY_NAME", pkColumnValue = "JOB", valueColumnName = "ID_VALUE")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JOB_ID_GEN")
 	private Long id;
 
 	@Column(name = "STATE")
@@ -38,7 +47,9 @@ public class JobData {
 	@Column(name = "EXCEPTION_MESSAGE")
 	private String exceptionMessage;
 
-	@Transient
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "JOB_OUTPUTFORMAT", joinColumns = { @JoinColumn(name = "JOB_ID") })
+	@OrderColumn(name = "LIST_IDX")
 	private List<OutputFormat> outputFormats;
 
 	public Long getId() {

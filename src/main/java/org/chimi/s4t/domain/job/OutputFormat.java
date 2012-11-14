@@ -1,13 +1,37 @@
 package org.chimi.s4t.domain.job;
 
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+
+@Embeddable
 public class OutputFormat {
 
+	@Column(name = "WIDTH")
 	private int width;
+
+	@Column(name = "HEIGHT")
 	private int height;
+
+	@Column(name = "BITRATE")
 	private int bitrate;
+
+	@Column(name = "CONTAINER")
+	@Enumerated(EnumType.STRING)
 	private Container container;
+
+	@Column(name = "VIDEO_CODEC")
+	@Enumerated(EnumType.STRING)
 	private VideoCodec videoCodec;
+
+	@Column(name = "AUDIO_CODEC")
+	@Enumerated(EnumType.STRING)
 	private AudioCodec audioCodec;
+
+	@SuppressWarnings("unused")
+	private OutputFormat() {
+	}
 
 	public OutputFormat(int width, int height, int bitrate,
 			Container container, VideoCodec videoCodec, AudioCodec audioCodec) {

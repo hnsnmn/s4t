@@ -12,7 +12,9 @@ public class LocalStorageMediaSourceFile extends MediaSourceFile {
 
 	@Override
 	public File getSourceFile() {
-		return new File(getUrl());
+		String url = getUrl();
+		String filePath = url.substring("file://".length());
+		return new File(filePath);
 	}
 
 }

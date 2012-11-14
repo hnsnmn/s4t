@@ -4,7 +4,6 @@ import static org.junit.Assert.assertNotNull;
 
 import javax.sql.DataSource;
 
-import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.ResultCallbackFactory;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;

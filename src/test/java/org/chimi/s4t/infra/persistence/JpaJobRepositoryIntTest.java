@@ -54,6 +54,8 @@ public class JpaJobRepositoryIntTest {
 
 	@Test
 	public void findById() {
-
+		Job job = jobRepository.findById(1L);
+		assertTrue(job.isWaiting());
+		assertEquals(2, job.getOutputFormats().size());
 	}
 }

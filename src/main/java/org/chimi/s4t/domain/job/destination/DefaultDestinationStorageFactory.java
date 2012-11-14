@@ -9,8 +9,7 @@ public class DefaultDestinationStorageFactory implements
 	@Override
 	public DestinationStorage create(String destinationStorage) {
 		if (destinationStorage.startsWith("file://")) {
-			return new FileDestinationStorage(
-					destinationStorage.substring("file://".length()));
+			return new FileDestinationStorage(destinationStorage);
 		}
 		throw new IllegalArgumentException(
 				"not supported destination storage: " + destinationStorage);

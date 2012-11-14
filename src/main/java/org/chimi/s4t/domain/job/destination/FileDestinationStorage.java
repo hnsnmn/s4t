@@ -20,11 +20,16 @@ public class FileDestinationStorage extends DestinationStorage {
 	@Override
 	public void save(List<File> multimediaFiles, List<File> thumbnails) {
 		try {
-			copy(multimediaFiles, getUrl());
-			copy(thumbnails, getUrl());
+			String folder = getFolder();
+			copy(multimediaFiles, folder);
+			copy(thumbnails, folder);
 		} catch (IOException ex) {
 			throw new RuntimeException("Fail to copy: " + ex.getMessage(), ex);
 		}
+	}
+
+	private String getFolder() {
+		return getUrl().substring("file://".length());
 	}
 
 	private void copy(List<File> files, String folder) throws IOException {
