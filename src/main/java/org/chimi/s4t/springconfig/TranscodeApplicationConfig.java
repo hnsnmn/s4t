@@ -3,6 +3,7 @@ package org.chimi.s4t.springconfig;
 import org.chimi.s4t.application.transcode.AddJobService;
 import org.chimi.s4t.application.transcode.AddJobServiceImpl;
 import org.chimi.s4t.application.transcode.JobQueue;
+import org.chimi.s4t.application.transcode.TranscodingRunner;
 import org.chimi.s4t.application.transcode.TranscodingService;
 import org.chimi.s4t.application.transcode.TranscodingServiceImpl;
 import org.chimi.s4t.application.transcode.jobqueue.MemoryJobQueue;
@@ -31,6 +32,11 @@ public class TranscodeApplicationConfig {
 	private Transcoder transcoder;
 
 	private ThumbnailExtractor thumbnailExtractor;
+
+	@Bean
+	public TranscodingRunner transcodingRunner() {
+		return new TranscodingRunner(transcodingService(), jobQueue());
+	}
 
 	@Bean
 	public AddJobService addJobService() {
