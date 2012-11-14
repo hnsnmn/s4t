@@ -2,12 +2,17 @@ package org.chimi.s4t.infra.repositories;
 
 import java.util.List;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import org.chimi.s4t.domain.job.Job;
@@ -19,6 +24,8 @@ import org.chimi.s4t.domain.job.OutputFormat;
 public class JobData {
 
 	@Id
+	@TableGenerator(name = "JOB_GEN", table = "ID_GENERATOR", pkColumnName = "TABLE_NAME", valueColumnName = "ID_VALUE")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JOB_GEN")
 	@Column(name = "JOB_ID")
 	private Long id;
 
