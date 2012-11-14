@@ -40,7 +40,6 @@ public class JpaConfig {
 	public JpaVendorAdapter jpaVendorAdapter() {
 		HibernateJpaVendorAdapter hibernateJpaVendorAdapter = new HibernateJpaVendorAdapter();
 		hibernateJpaVendorAdapter.setDatabase(Database.HSQL);
-		hibernateJpaVendorAdapter.setShowSql(true);
 		return hibernateJpaVendorAdapter;
 	}
 

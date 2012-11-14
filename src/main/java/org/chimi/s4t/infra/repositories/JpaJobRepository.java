@@ -3,8 +3,11 @@ package org.chimi.s4t.infra.repositories;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.chimi.s4t.domain.job.DestinationStorageFactory;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.JobRepository;
+import org.chimi.s4t.domain.job.MediaSourceFileFactory;
+import org.chimi.s4t.domain.job.ResultCallbackFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +16,19 @@ public class JpaJobRepository implements JobRepository {
 
 	@PersistenceContext
 	private EntityManager entityManager;
-	
+
+	private MediaSourceFileFactory mediaSourceFileFactory;
+	private DestinationStorageFactory destinationStorageFactory;
+	private ResultCallbackFactory resultCallbackFactory;
+
+	public JpaJobRepository(MediaSourceFileFactory mediaSourceFileFactory,
+			DestinationStorageFactory destinationStorageFactory,
+			ResultCallbackFactory resultCallbackFactory) {
+		this.mediaSourceFileFactory = mediaSourceFileFactory;
+		this.destinationStorageFactory = destinationStorageFactory;
+		this.resultCallbackFactory = resultCallbackFactory;
+	}
+
 	@Transactional
 	@Override
 	public Job findById(Long jobId) {
@@ -35,8 +50,8 @@ public class JpaJobRepository implements JobRepository {
 	}
 
 	private Job createJobFromJobData(JobData jobData) {
-		// TODO Auto-generated method stub
-		return null;
+		return new JobImpl(jobData, mediaSourceFileFactory,
+				destinationStorageFactory, resultCallbackFactory);
 	}
 
 }

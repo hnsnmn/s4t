@@ -3,10 +3,8 @@ package org.chimi.s4t.springconfig;
 import org.chimi.s4t.application.transcode.AddJobService;
 import org.chimi.s4t.application.transcode.AddJobServiceImpl;
 import org.chimi.s4t.application.transcode.JobQueue;
-import org.chimi.s4t.application.transcode.TranscodingRunner;
 import org.chimi.s4t.application.transcode.TranscodingService;
 import org.chimi.s4t.application.transcode.TranscodingServiceImpl;
-import org.chimi.s4t.application.transcode.jobqueue.MemoryJobQueue;
 import org.chimi.s4t.domain.job.DestinationStorageFactory;
 import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.MediaSourceFileFactory;
@@ -31,27 +29,19 @@ public class TranscodeApplicationConfig {
 	@Autowired
 	private Transcoder transcoder;
 
+	private JobQueue jobQueye;
 	private ThumbnailExtractor thumbnailExtractor;
-
-	@Bean
-	public TranscodingRunner transcodingRunner() {
-		return new TranscodingRunner(transcodingService(), jobQueue());
-	}
 
 	@Bean
 	public AddJobService addJobService() {
 		return new AddJobServiceImpl(mediaSourceFileFactory,
 				destinationStorageFactory, resultCallbackFactory,
-				jobRepository, jobQueue());
+				jobRepository, jobQueye);
 	}
 
 	@Bean
 	public TranscodingService transcodingService() {
 		return new TranscodingServiceImpl(transcoder, thumbnailExtractor,
 				jobRepository);
-	}
-
-	public JobQueue jobQueue() {
-		return new MemoryJobQueue();
 	}
 }

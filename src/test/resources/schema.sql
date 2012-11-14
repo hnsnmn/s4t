@@ -1,13 +1,11 @@
 create table ID_GENERATOR (
-	TABLE_NAME varchar(100) not null,
-	ID_VALUE integer,
-	primary key(TABLE_NAME)
+	ENTITY_NAME varchar(50),
+	ID_VALUE int,
+	primary key (ENTITY_NAME)
 );
 
-insert into ID_GENERATOR values ('JOB_GEN', 1);
-
 create table JOB (
-	JOB_ID integer,
+	JOB_ID INT IDENTITY,
 	STATE varchar(20),
 	SOURCE_URL varchar(100),
 	DESTINATION_URL varchar(100),
@@ -15,3 +13,15 @@ create table JOB (
 	EXCEPTION_MESSAGE varchar(255),
 	primary key (JOB_ID)
 );
+
+create table JOB_OUTPUTFORMAT (
+	JOB_ID INT,
+	LIST_IDX INT,
+	WIDTH INT,
+	HEIGHT INT,
+	BITRATE INT,
+	CONTAINER varchar(20),
+	VIDEO_CODEC varchar(20),
+	AUDIO_CODEC varchar(20)
+);
+create INDEX JOB_OUTPUTFORMAT_IDX ON JOB_OUTPUTFORMAT (JOB_ID, LIST_IDX);
