@@ -1,4 +1,4 @@
-package org.chimi.s4t.infra.repositories;
+package org.chimi.s4t.infra.persistence;
 
 import java.util.List;
 
@@ -80,7 +80,7 @@ public class JobData {
 		return outputFormats;
 	}
 
-	public static class ExporterToJobData implements Job.Exporter {
+	public static class ExporterToJobData implements Job.Exporter<JobData> {
 
 		private JobData jobData = new JobData();
 
@@ -119,7 +119,8 @@ public class JobData {
 			jobData.outputFormats = outputFormat;
 		}
 
-		public JobData getJobData() {
+		@Override
+		public JobData build() {
 			return jobData;
 		}
 	}

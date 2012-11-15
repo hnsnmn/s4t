@@ -1,29 +1,24 @@
-package org.chimi.s4t.infra.repositories;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+package org.chimi.s4t.infra.persistence;
 
 import org.chimi.s4t.domain.job.DestinationStorageFactory;
 import org.chimi.s4t.domain.job.Job;
 import org.chimi.s4t.domain.job.JobRepository;
 import org.chimi.s4t.domain.job.MediaSourceFileFactory;
 import org.chimi.s4t.domain.job.ResultCallbackFactory;
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-@Repository
-public class JpaJobRepository implements JobRepository {
+public class DbJobRepository implements JobRepository {
 
-	@PersistenceContext
-	private EntityManager entityManager;
-
+	private JobDataDao jobDataDao;
 	private MediaSourceFileFactory mediaSourceFileFactory;
 	private DestinationStorageFactory destinationStorageFactory;
 	private ResultCallbackFactory resultCallbackFactory;
 
-	public JpaJobRepository(MediaSourceFileFactory mediaSourceFileFactory,
+	public DbJobRepository(JobDataDao jobDataDao,
+			MediaSourceFileFactory mediaSourceFileFactory,
 			DestinationStorageFactory destinationStorageFactory,
 			ResultCallbackFactory resultCallbackFactory) {
+		this.jobDataDao = jobDataDao;
 		this.mediaSourceFileFactory = mediaSourceFileFactory;
 		this.destinationStorageFactory = destinationStorageFactory;
 		this.resultCallbackFactory = resultCallbackFactory;
@@ -32,26 +27,29 @@ public class JpaJobRepository implements JobRepository {
 	@Transactional
 	@Override
 	public Job findById(Long jobId) {
-		JobData jobData = entityManager.find(JobData.class, jobId);
+		JobData jobData = jobDataDao.findById(jobId);
 		if (jobData == null) {
 			return null;
 		}
 		return createJobFromJobData(jobData);
 	}
 
+	private Job createJobFromJobData(JobData jobData) {
+		return new JobImpl(jobDataDao, jobData.getId(), jobData.getState(),
+				mediaSourceFileFactory.create(jobData.getSourceUrl()),
+				destinationStorageFactory.create(jobData.getDestinationUrl()),
+				jobData.getOutputFormats(),
+				resultCallbackFactory.create(jobData.getCallbackUrl()),
+				jobData.getExceptionMessage());
+	}
+
 	@Transactional
 	@Override
 	public Job save(Job job) {
 		JobData.ExporterToJobData exporter = new JobData.ExporterToJobData();
-		job.export(exporter);
-		JobData jobData = exporter.getJobData();
-		entityManager.persist(jobData);
-		return createJobFromJobData(jobData);
-	}
-
-	private Job createJobFromJobData(JobData jobData) {
-		return new JobImpl(jobData, mediaSourceFileFactory,
-				destinationStorageFactory, resultCallbackFactory);
+		JobData jobData = job.export(exporter);
+		JobData savedJobData = jobDataDao.save(jobData);
+		return createJobFromJobData(savedJobData);
 	}
 
 }

@@ -6,8 +6,7 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
-@Import({ DomainConfig.class, RepositoryConfig.class, JpaConfig.class,
-		FfmpegConfig.class })
+@Import({ DomainConfig.class, RepositoryConfig.class, JpaConfig.class })
 @ImportResource("classpath:spring/datasource.xml")
 @EnableTransactionManagement
 public class ApplicationContextConfig {

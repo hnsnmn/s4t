@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
+import org.chimi.s4t.infra.persistence.ExceptionMessageUtil;
+
 public class Job {
 
 	public static enum State {
@@ -23,18 +25,21 @@ public class Job {
 	public Job(MediaSourceFile mediaSourceFile,
 			DestinationStorage destinationStorage,
 			List<OutputFormat> outputFormats, ResultCallback callback) {
-		this(null, mediaSourceFile, destinationStorage, outputFormats, callback);
+		this(null, State.WAITING, mediaSourceFile, destinationStorage,
+				outputFormats, callback, null);
 	}
 
-	public Job(Long id, MediaSourceFile mediaSourceFile,
+	public Job(Long id, State state, MediaSourceFile mediaSourceFile,
 			DestinationStorage destinationStorage,
-			List<OutputFormat> outputFormats, ResultCallback callback) {
+			List<OutputFormat> outputFormats, ResultCallback callback,
+			String errorMessage) {
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
 		this.destinationStorage = destinationStorage;
 		this.outputFormats = outputFormats;
 		this.callback = callback;
-		this.state = State.WAITING;
+		this.state = state;
+		this.exceptionMessage = errorMessage;
 	}
 
 	public Long getId() {
@@ -89,8 +94,8 @@ public class Job {
 		this.state = newState;
 	}
 
-	private void exceptionOccurred(RuntimeException ex) {
-		exceptionMessage = ex.getMessage();
+	protected void exceptionOccurred(RuntimeException ex) {
+		exceptionMessage = ExceptionMessageUtil.getMessage(ex);
 		callback.nofiyFailedResult(id, state, exceptionMessage);
 	}
 
@@ -125,7 +130,7 @@ public class Job {
 		changeState(Job.State.COMPLETED);
 	}
 
-	public Exporter export(Exporter exporter) {
+	public <T> T export(Exporter<T> exporter) {
 		exporter.addId(id);
 		exporter.addState(state);
 		exporter.addMediaSource(mediaSourceFile.getUrl());
@@ -133,10 +138,10 @@ public class Job {
 		exporter.addResultCallback(callback.getUrl());
 		exporter.addOutputFormat(getOutputFormats());
 		exporter.addExceptionMessage(exceptionMessage);
-		return exporter;
+		return exporter.build();
 	}
 
-	public static interface Exporter {
+	public static interface Exporter<T> {
 		public void addId(Long id);
 
 		public void addState(Job.State state);
@@ -150,5 +155,7 @@ public class Job {
 		public void addExceptionMessage(String exceptionMessage);
 
 		public void addOutputFormat(List<OutputFormat> outputFormat);
+
+		public T build();
 	}
 }

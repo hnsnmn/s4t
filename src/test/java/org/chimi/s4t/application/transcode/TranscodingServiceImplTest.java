@@ -66,8 +66,8 @@ public class TranscodingServiceImplTest {
 
 	@Before
 	public void setup() {
-		mockJob = new Job(jobId, mediaSourceFile, destinationStorage,
-				outputFormats, callback);
+		mockJob = new Job(jobId, Job.State.WAITING, mediaSourceFile,
+				destinationStorage, outputFormats, callback, null);
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 
 		transcodingService = new TranscodingServiceImpl(transcoder,

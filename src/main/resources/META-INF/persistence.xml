@@ -7,7 +7,7 @@
 	version="2.0">
 
 	<persistence-unit name="s4t">
-		<class>org.chimi.s4t.infra.repositories.JobData</class>
+		<class>org.chimi.s4t.infra.persistence.JobData</class>
 
 		<exclude-unlisted-classes />
 		<properties>
