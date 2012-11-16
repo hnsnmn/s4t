@@ -1,5 +1,6 @@
 package org.chimi.s4t.infra.ffmpeg;
 
+import it.sauronsoftware.jave.AudioAttributes;
 import it.sauronsoftware.jave.Encoder;
 import it.sauronsoftware.jave.EncoderException;
 import it.sauronsoftware.jave.EncodingAttributes;
@@ -30,7 +31,7 @@ public class JaveUsageTest {
 		File source = new File("src/test/resources/sample.avi");
 		File target = new File("target/sample.mp4");
 
-		// AudioAttributes audio = new AudioAttributes();
+		AudioAttributes audio = new AudioAttributes();
 		// audio.setCodec("libfaac");
 		// audio.setBitRate(new Integer(64000));
 		// audio.setChannels(new Integer(1));
@@ -44,7 +45,7 @@ public class JaveUsageTest {
 
 		EncodingAttributes attrs = new EncodingAttributes();
 		attrs.setFormat("mp4");
-		// attrs.setAudioAttributes(audio);
+		attrs.setAudioAttributes(audio);
 		attrs.setVideoAttributes(video);
 
 		Encoder encoder = new Encoder();
