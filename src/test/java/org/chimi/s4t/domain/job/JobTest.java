@@ -20,6 +20,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class JobTest {
 
+	private ThumbnailPolicy thumbnailPolicy;
+
 	@Mock
 	private MediaSourceFile mediaSource;
 	@Mock
@@ -43,7 +45,10 @@ public class JobTest {
 
 	@Test
 	public void jobShouldBeCreatedStateWhenCreated() {
-		Job job = new Job(mediaSource, destination, outputFormats, callback);
+		thumbnailPolicy = new ThumbnailPolicy();
+
+		Job job = new Job(mediaSource, destination, outputFormats, callback,
+				thumbnailPolicy);
 		assertEquals(Job.State.WAITING, job.getLastState());
 		assertTrue(job.isWaiting());
 		assertFalse(job.isFinished());
@@ -58,8 +63,8 @@ public class JobTest {
 		when(mediaSource.getSourceFile()).thenReturn(sourceFile);
 		when(transcoder.transcode(sourceFile, outputFormats)).thenReturn(
 				multimediaFiles);
-		when(thumbnailExtractor.extract(sourceFile, jobId)).thenReturn(
-				thumbnails);
+		when(thumbnailExtractor.extract(sourceFile, thumbnailPolicy))
+				.thenReturn(thumbnails);
 
 		Job job = createWaitingJobWithID(jobId);
 
@@ -76,7 +81,7 @@ public class JobTest {
 
 	private Job createWaitingJobWithID(long jobId) {
 		return new Job(jobId, Job.State.WAITING, mediaSource, destination,
-				outputFormats, callback, null);
+				outputFormats, callback, thumbnailPolicy, null);
 	}
 
 	@Test

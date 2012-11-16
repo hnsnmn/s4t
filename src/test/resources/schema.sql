@@ -10,6 +10,12 @@ create table JOB (
 	SOURCE_URL varchar(100),
 	DESTINATION_URL varchar(100),
 	CALLBACK_URL varchar(100),
+	TP_OPTION varchar(20),
+	TP_WIDTH int,
+	TP_HEIGHT int,
+	TP_BEGINTIME int,
+	TP_ENDTIME int,
+	TP_INTERVAL int,
 	EXCEPTION_MESSAGE varchar(255),
 	primary key (JOB_ID)
 );

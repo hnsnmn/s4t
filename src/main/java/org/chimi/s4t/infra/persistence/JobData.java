@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -18,6 +19,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.chimi.s4t.domain.job.Job;
+import org.chimi.s4t.domain.job.ThumbnailPolicy;
 import org.chimi.s4t.domain.job.Job.State;
 import org.chimi.s4t.domain.job.OutputFormat;
 
@@ -52,6 +54,9 @@ public class JobData {
 	@OrderColumn(name = "LIST_IDX")
 	private List<OutputFormat> outputFormats;
 
+	@Embedded
+	private ThumbnailPolicy thumbnailPolicy;
+
 	public Long getId() {
 		return id;
 	}
@@ -78,6 +83,10 @@ public class JobData {
 
 	public List<OutputFormat> getOutputFormats() {
 		return outputFormats;
+	}
+
+	public ThumbnailPolicy getThumbnailPolicy() {
+		return thumbnailPolicy;
 	}
 
 	public static class ExporterToJobData implements Job.Exporter<JobData> {
@@ -120,8 +129,14 @@ public class JobData {
 		}
 
 		@Override
+		public void addThumbnailPolicy(ThumbnailPolicy thumbnailPolicy) {
+			jobData.thumbnailPolicy = thumbnailPolicy;
+		}
+
+		@Override
 		public JobData build() {
 			return jobData;
 		}
+
 	}
 }

@@ -3,12 +3,14 @@ package org.chimi.s4t.application.transcode;
 import java.util.List;
 
 import org.chimi.s4t.domain.job.OutputFormat;
+import org.chimi.s4t.domain.job.ThumbnailPolicy;
 
 public class AddJobRequest {
 
 	private String mediaSource;
 	private String destinationStorage;
 	private List<OutputFormat> outputFormats;
+	private ThumbnailPolicy thumbnailPolicy;
 	private String resultCallback;
 
 	public String getMediaSource() {
@@ -35,6 +37,14 @@ public class AddJobRequest {
 		this.outputFormats = outputFormats;
 	}
 
+	public ThumbnailPolicy getThumbnailPolicy() {
+		return thumbnailPolicy;
+	}
+
+	public void setThumbnailPolicy(ThumbnailPolicy thumbnailPolicy) {
+		this.thumbnailPolicy = thumbnailPolicy;
+	}
+
 	public String getResultCallback() {
 		return resultCallback;
 	}
@@ -47,8 +57,8 @@ public class AddJobRequest {
 	public String toString() {
 		return "AddJobRequest [mediaSource=" + mediaSource
 				+ ", destinationStorage=" + destinationStorage
-				+ ", outputFormats=" + outputFormats + ", resultCallback="
-				+ resultCallback + "]";
+				+ ", outputFormats=" + outputFormats + ", thumbnailPolicy="
+				+ thumbnailPolicy + ", resultCallback=" + resultCallback + "]";
 	}
 
 }

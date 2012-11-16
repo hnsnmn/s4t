@@ -1,6 +1,8 @@
 package org.chimi.s4t.springconfig;
 
+import org.chimi.s4t.domain.job.ThumbnailExtractor;
 import org.chimi.s4t.domain.job.Transcoder;
+import org.chimi.s4t.infra.ffmpeg.FfmpegThumbnailExtractor;
 import org.chimi.s4t.infra.ffmpeg.FfmpegTranscoder;
 import org.chimi.s4t.infra.ffmpeg.NamingRule;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +14,11 @@ public class FfmpegConfig {
 	@Bean
 	public Transcoder transcoder() {
 		return new FfmpegTranscoder(NamingRule.DEFAULT);
+	}
+
+	@Bean
+	public ThumbnailExtractor thumbnailExtractor() {
+		return new FfmpegThumbnailExtractor();
 	}
 
 }

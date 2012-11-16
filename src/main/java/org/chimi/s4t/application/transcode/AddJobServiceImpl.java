@@ -48,7 +48,8 @@ public class AddJobServiceImpl implements AddJobService {
 			ResultCallback resultCallback = resultCallbackFactory
 					.create(request.getResultCallback());
 			return new Job(mediaSourceFile, destinationStorage,
-					request.getOutputFormats(), resultCallback);
+					request.getOutputFormats(), resultCallback,
+					request.getThumbnailPolicy());
 		} catch (RuntimeException ex) {
 			logger.error("fail to create Job from request {}", request, ex);
 			throw ex;

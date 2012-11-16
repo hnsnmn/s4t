@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -29,6 +28,7 @@ import org.chimi.s4t.domain.job.MediaSourceFile;
 import org.chimi.s4t.domain.job.OutputFormat;
 import org.chimi.s4t.domain.job.ResultCallback;
 import org.chimi.s4t.domain.job.ThumbnailExtractor;
+import org.chimi.s4t.domain.job.ThumbnailPolicy;
 import org.chimi.s4t.domain.job.Transcoder;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,10 +64,14 @@ public class TranscodingServiceImplTest {
 	private List<File> mockThumbnails = new ArrayList<File>();
 	private RuntimeException mockException = new RuntimeException();
 
+	private ThumbnailPolicy thumbnailPolicy;
+
 	@Before
 	public void setup() {
+		thumbnailPolicy = new ThumbnailPolicy();
 		mockJob = new Job(jobId, Job.State.WAITING, mediaSourceFile,
-				destinationStorage, outputFormats, callback, null);
+				destinationStorage, outputFormats, callback, thumbnailPolicy,
+				null);
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 
 		transcodingService = new TranscodingServiceImpl(transcoder,
@@ -76,8 +80,8 @@ public class TranscodingServiceImplTest {
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 		when(transcoder.transcode(mockMultimediaFile, outputFormats))
 				.thenReturn(mockMultimediaFiles);
-		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(
-				mockThumbnails);
+		when(thumbnailExtractor.extract(mockMultimediaFile, thumbnailPolicy))
+				.thenReturn(mockThumbnails);
 	}
 
 	@Test
@@ -149,8 +153,8 @@ public class TranscodingServiceImplTest {
 
 	@Test
 	public void transcodeFailBecauseExceptionOccuredAtThumbnailExtractor() {
-		when(thumbnailExtractor.extract(mockMultimediaFile, jobId)).thenThrow(
-				mockException);
+		when(thumbnailExtractor.extract(mockMultimediaFile, thumbnailPolicy))
+				.thenThrow(mockException);
 
 		executeFailingTranscodeAndAssertFail(Job.State.EXTRACTINGTHUMBNAIL);
 
@@ -187,10 +191,10 @@ public class TranscodingServiceImplTest {
 
 			if (this.thumbnailExtractorNever)
 				verify(thumbnailExtractor, never()).extract(any(File.class),
-						anyLong());
+						any(ThumbnailPolicy.class));
 			else
 				verify(thumbnailExtractor, only()).extract(mockMultimediaFile,
-						jobId);
+						thumbnailPolicy);
 
 			if (this.destinationStorageNever)
 				verify(destinationStorage, never()).save(anyListOf(File.class),
